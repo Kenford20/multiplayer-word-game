@@ -1,0 +1,87 @@
+body{
+	margin:0;
+	padding:0;
+	background:grey;
+	display:grid;
+	font-size:15px;
+}
+
+body{
+	grid-template-columns: 1fr 4fr 1fr;
+	grid-template-rows: 1fr 4fr 1fr 1fr 1fr;
+	/*grid-template-rows:auto;*/
+}
+
+
+/* Header Styles 
+--------------------------------------------*/
+header{
+	background-color:lightgrey;
+	text-align:center;
+	grid-column: 1/4;
+	grid-row:1/2;
+}
+
+header h1{
+	margin:0;
+}
+
+/* Gameboard 
+--------------------------------------------*/
+.nest{
+	background-color:yellow;
+	display:grid;
+	grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+	grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
+}
+
+#gameboard div{
+	background-color:pink;
+}
+
+
+/* Blue Team
+--------------------------------------------*/
+#blue-team{
+	grid-column:1/2;
+	grid-row:2/span 4;
+	background-color:blue;
+}
+
+
+/* Red Team
+--------------------------------------------*/
+#red-team{
+	/* grid area: row start / col start / row end / col end */
+	grid-area: 2 / 3 / 5 / 4;
+	background-color:red;
+}
+
+
+
+/* Spectators 
+--------------------------------------------*/
+#spectators{
+	grid-column:1/4;
+	grid-row:5/6;
+	text-align:center;
+	background-color:green;
+}
+
+#spectators li{
+	display:inline-block;
+}
+
+/* Instructions 
+--------------------------------------------*/
+#instructions{
+	
+}
+
+
+
+/* Hints
+--------------------------------------------*/
+.nest2{
+	background-color:purple;
+}
