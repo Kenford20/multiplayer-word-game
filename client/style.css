@@ -1,0 +1,147 @@
+body{
+	margin:0;
+	padding:0;
+	background:grey;
+	display:grid;
+	font-size:15px;
+	font-family: "Tahoma";
+}
+
+body{
+	grid-template-columns: 1fr 4fr 1fr;
+	grid-template-rows: 0.5fr 4fr 1fr 1fr 2fr;
+	/*grid-template-rows:auto;*/
+}
+
+
+/* Header Styles 
+--------------------------------------------*/
+header{
+	background-color:lightgrey;
+	text-align:center;
+	grid-column: 1/4;
+	grid-row:1/2;
+	border-bottom:5px solid black;
+}
+
+header h1{
+	margin:0;
+}
+
+/* Gameboard 
+--------------------------------------------*/
+.nest{
+	background-color:yellow;
+	display:grid;
+	grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+	grid-template-rows: 1fr 1fr 1fr 1fr 1fr;	
+}
+
+.nest div{
+	border:4px solid white;
+	background-color:yellow;
+	text-align:center;
+	line-height: 80px;
+}
+
+.nest .wod7{
+	background-color: lightblue;
+}
+
+/* Blue Team
+--------------------------------------------*/
+#blue-team{
+	grid-column:1/2;
+	grid-row:2/span 4;
+	background-color:blue;
+	text-align:center;
+	border-right:5px solid black;
+	color:white;
+}
+
+
+/* Red Team
+--------------------------------------------*/
+#red-team{
+	/* grid area: row start / col start / row end / col end */
+	grid-area: 2 / 3 / 5 / 4;
+	background-color:red;
+	text-align:center;
+	border-left:5px solid black;
+	color:white;
+}
+
+
+
+/* Spectators 
+--------------------------------------------*/
+#spectators{
+	grid-column:1/4;
+	grid-row:5/6;
+	background-color:green;
+	text-align:center;
+	border-top: 5px solid black;
+}
+
+#spectators li{
+	display:inline-block;
+}
+
+#spectators ul{
+}
+
+#red{
+	border:2px solid black;
+	padding:10px;
+	color:red;
+}
+
+#blue{
+	border:2px solid black;
+	padding: 10px;
+	color:blue;	
+}
+
+#name{
+	height:30px;
+}
+
+#spectators #name_btn{
+	border:2px solid black;
+	padding:10px;
+	color:green;
+}
+
+#spectators .join-red{
+	/* grid area: row start / col start / row end / col end 
+	grid-area: 5 / 3 / 6 / 4;*/
+	float:right;	
+}
+
+#spectators .join-blue{
+	float:left;
+}
+
+#spectators #players h3{
+	display:inline;
+	margin-bottom:5px;
+	color:white;
+}
+
+/* Instructions 
+--------------------------------------------*/
+#instructions{
+	background-color:pink;
+	border:2px solid black;
+	text-align:center;
+}
+
+
+
+/* Hints
+--------------------------------------------*/
+.nest2{
+	border:2px solid black;
+	background-color:purple;
+	text-align:center;
+}
