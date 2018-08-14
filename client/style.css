@@ -13,6 +13,9 @@ body{
 	/*grid-template-rows:auto;*/
 }
 
+.btn:hover{
+	background-color:white !important;
+}
 
 /* Header Styles 
 --------------------------------------------*/
@@ -56,9 +59,32 @@ header h1{
 	background-color:blue;
 	text-align:center;
 	border-right:5px solid black;
-	color:white;
+	color:lightblue;
 }
 
+#blue-spy{
+	border:2px solid grey;
+	padding:10px;
+	color:grey;
+	background-color:lightblue;
+}
+
+#blue-spy-message {
+	text-align:center;
+	grid-column:1/2;
+	grid-row:4/5;
+	color:blue;
+	background-color:lightblue;
+	border:3px solid black;
+}
+
+.hide{
+	display:none;
+}
+
+#blue-spy-message span{
+	color:grey;
+}
 
 /* Red Team
 --------------------------------------------*/
@@ -68,10 +94,28 @@ header h1{
 	background-color:red;
 	text-align:center;
 	border-left:5px solid black;
-	color:white;
+	color:pink;
 }
 
+#red-spy{
+	border:2px solid grey;
+	padding:10px;
+	color:grey;
+	background-color:pink;
+}
 
+#red-spy-message {
+	text-align:center;
+	grid-column:3/4;
+	grid-row:4/5;
+	color:red;
+	background-color:pink;
+	border:3px solid black;
+}
+
+#red-spy-message span{
+	color:grey;
+}
 
 /* Spectators 
 --------------------------------------------*/
@@ -94,13 +138,20 @@ header h1{
 	border:2px solid black;
 	padding:10px;
 	color:red;
+	border-radius:10px;
+	background-color:pink;
+	width:130px;
 }
 
 #blue{
 	border:2px solid black;
+	border-radius: 10px;
 	padding: 10px;
 	color:blue;	
+	background-color:lightblue;
+	width:130px;
 }
+
 
 #name{
 	height:30px;
@@ -112,13 +163,13 @@ header h1{
 	color:green;
 }
 
-#spectators .join-red{
+#spectators #red{
 	/* grid area: row start / col start / row end / col end 
 	grid-area: 5 / 3 / 6 / 4;*/
 	float:right;	
 }
 
-#spectators .join-blue{
+#spectators #blue{
 	float:left;
 }
 
@@ -131,12 +182,10 @@ header h1{
 /* Instructions 
 --------------------------------------------*/
 #instructions{
-	background-color:pink;
+	background-color:orange;
 	border:2px solid black;
 	text-align:center;
 }
-
-
 
 /* Hints
 --------------------------------------------*/
