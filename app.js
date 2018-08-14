@@ -43,6 +43,7 @@ var io = require('socket.io')(server,{});
 	socket.emit('allRedPlayers', data.redPlayers);
 	socket.emit('buttonStates', buttonStates);
 	socket.emit('nameOfBlueSpy', data.blueSpyMaster);
+	socket.emit('nameOfRedSpy', data.redSpyMaster);
 
 	socket.on('playerName', function(name){
 		data.spectators.push(name);
@@ -76,8 +77,9 @@ var io = require('socket.io')(server,{});
 		data.blueSpyMaster = nameOfSpyMaster;
 	})
 
-	socket.on('highlightBlueSpy', function(nameOfBlueSpy){
-		io.sockets.emit('highlightBlueSpy', nameOfBlueSpy);
+	socket.on('highlightBlueSpy', function(){
+		console.log("data bsm : " + data.blueSpyMaster);
+		io.sockets.emit('highlightBlueSpy', data.blueSpyMaster);
 	})
 	
 	socket.on('redSpy', function(nameOfSpyMaster){
@@ -87,7 +89,7 @@ var io = require('socket.io')(server,{});
 	})
 
 	socket.on('highlightRedSpy', function(nameOfRedSpy){
-		io.sockets.emit('highlightRedSpy', nameOfRedSpy);
+		io.sockets.emit('highlightRedSpy', data.redSpyMaster);
 	})
 
 	//setInterval(function(){

@@ -17,9 +17,10 @@ var bluePlayerList = document.querySelector("#blue-players");
 var redPlayerList = document.querySelector("#red-players");
 
 var wordType = {
-	redTeamStarts: ['red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'yellow', 'yellow' 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'black'],
-	blueTeamStarts: ['red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'yellow', 'yellow' 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'black'],
-}
+	redTeamStarts: ['red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'black'],
+	blueTeamStarts: ['red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'black'],
+};
+
 var socket = io();
 
 /* Function Definitions
@@ -125,51 +126,29 @@ function removeBlueSpyButton(nameOfBlueSpy){
 		blueSpy_btn.style.display = "none";
 		blueSpy.classList.remove("hide");
 	}
-	socket.emit('highlightBlueSpy', nameOfBlueSpy);
+	socket.emit('highlightBlueSpy');
 }
 
-function highlightSpy(nameOfSpy){
-	var bluePlayers = bluePlayerList.querySelectorAll("h3");
+function highlightRedSpy(nameOfSpy){
 	var redPlayers = redPlayerList.querySelectorAll("h3");
-	var players;
-
-	console.log(client.team);
-
-	if(client.team == 'blue')
-		players = bluePlayers;
-	else if(client.team == 'red'){
-		players = redPlayers;
-		console.log(players);
-	}
-
-	console.log(bluePlayers);
-	console.log(redPlayers);
-	console.log(players);
-
-	if(client.team != ''){
-		for(i=0;i<players.length;i++){
-			console.log(nameOfSpy);
-			console.log(players[i].innerHTML);
-			if(players[i].innerHTML == (nameOfSpy + '  ')){
-				players[i].style.background = "grey";
-				players[i].style.border = "2px solid lightgrey";
-			}
+	 
+	for(i=0;i<redPlayers.length;i++){
+		if(redPlayers[i].innerHTML == (nameOfSpy + '  ')){
+			redPlayers[i].style.background = "grey";
+			redPlayers[i].style.border = "2px solid lightgrey";
 		}
 	}
 }
-/*
-function highlightSpy(nameOfSpy){
+
+function highlightBlueSpy(nameOfSpy){
 	var bluePlayers = bluePlayerList.querySelectorAll("h3");
-	console.log(bluePlayers);
 	for(i=0;i<bluePlayers.length;i++){
-		console.log(nameOfSpy);
-		console.log(bluePlayers[i].innerHTML);
 		if(bluePlayers[i].innerHTML == (nameOfSpy + '  ')){
 			bluePlayers[i].style.background = "grey";
 			bluePlayers[i].style.border = "2px solid lightblue"
 		}
 	}
-}*/
+}
 
 /* Sockets
 **************************************/
@@ -180,6 +159,7 @@ socket.on('allBluePlayers', currentBluePlayers);
 socket.on('allRedPlayers', currentRedPlayers);
 socket.on('buttonStates', checkButtonStates);
 socket.on('nameOfBlueSpy', removeBlueSpyButton);
+socket.on('nameOfRedSpy', removeRedSpyButton);
 
 // move the clients' name to their respective teams
 socket.on('bluePlayer', createBluePlayers);
@@ -189,8 +169,8 @@ socket.on('removeSpectator', removeSpectator);
 // spy stuff
 socket.on('blueSpyButton', removeBlueSpyButton);
 socket.on('redSpyButton', removeRedSpyButton);
-socket.on('highlightBlueSpy', highlightSpy);
-socket.on('highlightRedSpy', highlightSpy)
+socket.on('highlightBlueSpy', highlightBlueSpy);
+socket.on('highlightRedSpy', highlightRedSpy)
 
 /* Event Listeners
 ***********************************/
