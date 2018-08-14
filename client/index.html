@@ -13,19 +13,19 @@
 <body>
 	<header>
 		<h1> KODO NAMAES </h1>
-		<button class="btn" id="url-copy">Copy this link and share with your friends!</button>
+		<button class="btn" id="start-game">Start Game!</button>
 	</header>
 
 	<section id="blue-team">
 		<h1>BLUE TEAM</h1>
-		<ul id="blue-players">
-			<li>Player 1</li>
-			<li>Player 2</li>
-			<li>Player 3</li>
-			<li>Player 4</li>
-		</ul>
-		<button class="btn" id="blue-spy">SPYMASTER</button>
+		<div id="blue-players">
+			<button class="btn" id="blue-spy">SPYMASTER</button>
+		</div>
 	</section>
+
+		<div class="hide" id="blue-spy-message">
+			<h4> <span id="blue-spy-name"> Name </span> is the spymaster </h4>
+		</div>
 
 	<section class="nest" #id="game-board">
 		<div><a href="#">Word1</a></div>
@@ -57,32 +57,32 @@
 
 	<section id="red-team">
 		<h1>RED TEAM</h1>
-		<ul id="red-players">
-			<li>Player 1</li>
-			<li>Player 2</li>
-			<li>Player 3</li>
-			<li>Player 4</li>
-		</ul>
-		<button class="btn" id="red-spy">SPYMASTER</button>
+		<div id="red-players"> 		
+			<button class="btn" id="red-spy">SPYMASTER</button>
+		</div>
 	</section>
 
+	<div class="hide" id="red-spy-message">
+		<h4> <span id="red-spy-name"> Name </span> is the spymaster </h4>
+	</div>
+
 	<section id="spectators">
-		<div class="join-red"><button class="join-teams" id="red">Join Red</button></div>
-		<div class="join-blue"><button class="join-teams" id="blue">Join Blue</button></div>
-		<h3> Welcome! Please enter your name and select a team </h3>
+		<button class="btn" id="red">Join Red</button>
+		<button class="btn" id="blue">Join Blue</button>
+		<h4> Welcome! Please enter your name and select a team </h4>
 		<div id="players">
 			
 		</div>
 		<input id="name" placeholder="Enter your name">
-		<button id="name_btn">Submit</button>
+		<button class="btn" id="name_btn">Submit</button>
 	</section>
 
 	<section id="instructions">
-		<h3> [color] Team, it is your turn to guess! Select a card that matches the hint provided by your team spymaster!</h3>
+		<h4> [color] Team, it is your turn to guess! Select a card that matches the hint provided by your team spymaster!</h4>
 	</section>
 
 	<section class="nest2" #id="hint">
-		<h3> The hint is [text typed from spymaster], There are [number] cards that go with this clue</h3>
+		<h4> The hint is [text typed from spymaster], There are [number] cards that go with this clue</h4>
 	</section>
 
 </body>
