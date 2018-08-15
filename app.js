@@ -22,7 +22,9 @@ var data = {
 	bluePlayers: [],
 	redPlayers: [],
 	blueSpyMaster:'',
-	redSpyMaster:''
+	redSpyMaster:'',
+	blueSpyID:0,
+	redSpyID:0
 };
 var buttonStates = {
 	blue: false,
@@ -45,6 +47,7 @@ var io = require('socket.io')(server,{});
 	socket.emit('nameOfBlueSpy', data.blueSpyMaster);
 	socket.emit('nameOfRedSpy', data.redSpyMaster);
 
+
 	socket.on('playerName', function(name){
 		data.spectators.push(name);
 		console.log("spectators after entering: " + data.spectators);
@@ -58,8 +61,17 @@ var io = require('socket.io')(server,{});
 		var spectatorIndex = data.spectators.indexOf(clientName);
 		data.spectators.splice(spectatorIndex, 1);
 		io.sockets.emit('removeSpectator', clientName);
-		console.log("spectators after joining blue team: " + data.spectators);
+		//console.log("spectators after joining blue team: " + data.spectators);
 	});
+
+	socket.on('removeFromBlue', function(bluePlayerToBeRemoved){
+		console.log("current blue players: " + data.bluePlayers);
+		var bluePlayerIndex = data.bluePlayers.indexOf(bluePlayerToBeRemoved);
+		data.bluePlayers.splice(bluePlayerIndex, 1);
+		//data.redPlayers.push(bluePlayerToBeRemoved);
+		console.log("Blue players after removal: " + data.bluePlayers);
+		io.sockets.emit('blueToRed', bluePlayerToBeRemoved);
+	})
 
 	socket.on('red', function(clientName){
 		console.log("Player: " + clientName + " has joined red team");
@@ -68,17 +80,26 @@ var io = require('socket.io')(server,{});
 		var spectatorIndex = data.spectators.indexOf(clientName);
 		data.spectators.splice(spectatorIndex, 1);
 		io.sockets.emit('removeSpectator', clientName);
-		console.log("spectators after joining red team: " + data.spectators);	
+		//console.log("spectators after joining red team: " + data.spectators);	
+	})
+
+	socket.on('removeFromRed', function(redPlayerToBeRemoved){
+		console.log("current red players: " + data.redPlayers);
+		var redPlayerIndex = data.redPlayers.indexOf(redPlayerToBeRemoved);
+		data.redPlayers.splice(redPlayerIndex, 1);
+		//data.bluePlayers.push(redPlayerToBeRemoved);
+		console.log("Red players after removal: " + data.redPlayers);
+		io.sockets.emit('redToBlue', redPlayerToBeRemoved);
 	})
 
 	socket.on('blueSpy', function(nameOfSpyMaster){
 		io.sockets.emit('blueSpyButton', nameOfSpyMaster);
 		buttonStates.blue = true;
 		data.blueSpyMaster = nameOfSpyMaster;
+		data.blueSpyID = socket.id;
 	})
 
 	socket.on('highlightBlueSpy', function(){
-		console.log("data bsm : " + data.blueSpyMaster);
 		io.sockets.emit('highlightBlueSpy', data.blueSpyMaster);
 	})
 	
@@ -86,12 +107,16 @@ var io = require('socket.io')(server,{});
 		io.sockets.emit('redSpyButton', nameOfSpyMaster);
 		buttonStates.red = true;
 		data.redSpyMaster = nameOfSpyMaster;
+		data.redSpyID = socket.id;
 	})
 
 	socket.on('highlightRedSpy', function(nameOfRedSpy){
 		io.sockets.emit('highlightRedSpy', data.redSpyMaster);
 	})
 
-	//setInterval(function(){
-	//}1000/50);
+	socket.on('setUpBoardforSpies', function(boardObject){
+		console.log(boardObject);
+		io.to(data.blueSpyID).emit('youCanSeeTheBoard', boardObject);
+		io.to(data.redSpyID).emit('youCanSeeTheBoard', boardObject);
+	})
 })
