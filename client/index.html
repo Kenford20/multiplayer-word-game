@@ -78,11 +78,14 @@
 	</section>
 
 	<section id="instructions">
-		<h4> [color] Team, it is your turn to guess! Select a card that matches the hint provided by your team spymaster!</h4>
+		<h4> <span id="team-color">[color]</span> Team, it is your turn to guess! Select a card that matches the hint provided by your team spymaster!</h4>
 	</section>
 
-	<section class="nest2" #id="hint">
-		<h4> The hint is [text typed from spymaster], There are [number] cards that go with this clue</h4>
+	<section class="nest2" id="hint">
+		<h4> The hint is <span id="hint-word">[word typed from spymaster]</span>, There are <span id="hint-number">[number]</span> cards that go with this clue</h4>
+		<input class="hide" id="input-hint" placeholder="Enter your hint">
+
+		<button class="btn hide" id="hint-btn">Submit Hint</button>
 	</section>
 
 </body>

@@ -119,4 +119,14 @@ var io = require('socket.io')(server,{});
 		io.to(data.blueSpyID).emit('youCanSeeTheBoard', boardObject);
 		io.to(data.redSpyID).emit('youCanSeeTheBoard', boardObject);
 	})
+
+	socket.on('blueTeamStarts', function(){
+		io.to(data.blueSpyID).emit('createHintBox');
+		io.sockets.emit('waitingForBlueSpy');
+	})
+
+	socket.on('redTeamStarts', function(){
+		io.to(data.redSpyID).emit('createHintBox');
+		io.sockets.emit('waitingForRedSpy');
+	})
 })

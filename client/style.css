@@ -84,6 +84,10 @@ header h1{
 	text-decoration:none;
 }
 
+.nest a:hover{
+	color:white;
+}
+
 /* Blue Team
 --------------------------------------------*/
 #blue-team{
@@ -227,3 +231,52 @@ header h1{
 	background-color:purple;
 	text-align:center;
 }
+
+#hint-word, #hint-number{
+	color:white;
+}
+
+#input-hint{
+	padding:10px;
+	border:2px solid black;
+	border-radius:10px;
+}
+
+#hint-btn{
+	padding:10px;
+	border:2px solid black;
+	border-radius:10px;
+}
+
+/* dropdown menu with browser support*/
+body select { 
+	display: inline-block; 
+	padding: 10px 30px 10px 13px !important;
+	margin-bottom:10px;
+	height: auto !important; 
+	border: 2px solid black; 
+	border-radius: 10px; 
+	background: url("download.png") right center no-repeat; 
+	background-size:15px;
+	background-color: #fff; 
+	color: purple; 
+	font-size: 12px; 
+	line-height: 16px !important; 
+	appearance: none; 
+	/* this is must */ -webkit-appearance: none; 
+	-moz-appearance: none; } 
+
+	/* body select.select_box option */ 
+	body select option {
+	 	padding: 0 4px; 
+	} 
+
+	/* for IE and Edge */ 
+	select::-ms-expand { 
+		display: none; 
+	} 
+
+	select:disabled::-ms-expand {
+	 	background: #f60; 
+	}
+
