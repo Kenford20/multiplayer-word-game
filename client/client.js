@@ -7,9 +7,14 @@ const joinRed_btn = document.querySelector("#red");
 const redSpy_btn = document.querySelector("#red-spy");
 const blueSpy_btn = document.querySelector("#blue-spy");
 const startGame_btn = document.querySelector("#start-game");
+const hint_btn = document.querySelector("#hint-btn");
 const submit_name = document.querySelector("#name_btn");
 const name = document.querySelector("#name");
 const gameBoard = document.querySelector("#game-board");
+const blueWaitingMessage = document.querySelector("#blue-waiting");
+const redWaitingMessage = document.querySelector("#red-waiting");
+const blueGuessMessage = document.querySelector("#blue-guess");
+const redGuessMessage = document.querySelector("#red-guess");
 
 var spectatorList = document.querySelector("#players");
 var bluePlayerList = document.querySelector("#blue-players");
@@ -248,6 +253,7 @@ function gameStartSetup(){
 			numberOfCards.blue = 8;
 			numberOfCards.red = 9;
 		}
+		console.log(numberOfCards);
 		boardData.divColors = whichTeamStarts;
 
 		socket.emit('setUpBoardforSpies', boardData);
@@ -272,14 +278,20 @@ function spyMasterBoard(boardObject){
 	}
 }
 
-function createHintBox(){
+function createHintBox(firstTurn){
 	document.querySelector("#input-hint").classList.remove("hide");
 	document.querySelector("#hint-btn").classList.remove("hide");
-
+	var numCards;
 	var selectNode = document.createElement("select");
-	document.querySelector("input-hint").appendChild(selectNode);
+	document.querySelector("#hint").appendChild(selectNode);
+	
+	if(firstTurn.blue)
+		numCards = firstTurn.numBlueCards;
+	else
+		numCards = firstTurn.numRedCards;
 
-    for(i=1; i<(numberOfCards.blue+1); i++){
+	console.log(numCards);
+    for(i=1; i<(numCards+1); i++){
     	var selectOption = document.createElement("option");
     	selectOption.setAttribute("value", i);
     	selectOption.innerHTML = i;
@@ -287,6 +299,67 @@ function createHintBox(){
     	console.log(selectOption);
 	}
 	console.log(selectNode);
+}
+
+function waitingMessage(firstTurn){
+	document.querySelector("#message").innerHTML = "";
+
+	if(firstTurn.blue)
+		blueWaitingMessage.classList.remove("hide");
+	else
+		redWaitingMessage.classList.remove("hide");
+}
+
+function guessMessage(gameTurns){
+	if(gameTurns.isBlueTurn){
+		blueWaitingMessage.classList.add("hide");
+		blueGuessMessage.classList.remove("hide");
+	}
+	else{
+		redWaitingMessage.classList.add("hide");
+		redGuessMessage.classList.remove("hide");
+	}
+}
+
+function revealHint(hintData){
+	var hintWord = document.querySelector("#input-hint");
+	document.querySelector("#hint-word").innerHTML = hintData.word;
+
+	var hintNumber = document.querySelector("select");
+	document.querySelector("#hint-number").innerHTML = hintData.number;
+
+	// styling the hint spans
+	if(hintData.isBlueTurn){
+		document.querySelector("#hint-word").style.color = "#1c64ff";
+		document.querySelector("#hint-number").style.color = "#1c64ff";
+	}
+	else{
+		document.querySelector("#hint-word").style.color = "#db3328";
+		document.querySelector("#hint-number").style.color = "#db3328";
+	}
+
+}
+
+function startGuess(){
+	socket.emit('guessMessage');
+
+	var hintData = {
+		word: '',
+		number: 0,
+		isBlueTurn: false,
+		isRedTurn: false
+	};
+
+	hintData.word = document.querySelector("#input-hint").value;
+	hintData.number = document.querySelector("select").value;
+	socket.emit('revealHint', hintData);
+
+	document.querySelector("#input-hint").classList.add("hide");
+	document.querySelector("#hint-btn").classList.add("hide");
+	var select = document.querySelector("select");
+	select.parentNode.removeChild(select);
+
+	//completeTurn()
 }
 
 /* Sockets
@@ -307,13 +380,19 @@ socket.on('removeSpectator', removeSpectator);
 socket.on('blueToRed', blueToRed);
 socket.on('redToBlue', redToBlue);
 
-// spy stuff
+// spy stuff setup
 socket.on('blueSpyButton', removeBlueSpyButton);
 socket.on('redSpyButton', removeRedSpyButton);
 socket.on('highlightBlueSpy', highlightBlueSpy);
 socket.on('highlightRedSpy', highlightRedSpy);
+
+// game started
 socket.on('youCanSeeTheBoard', spyMasterBoard);
 socket.on('createHintBox', createHintBox);
+socket.on('waitingForBlueSpy', waitingMessage);
+socket.on('waitingForRedSpy', waitingMessage);
+socket.on('guessMessage', guessMessage);
+socket.on('revealHint', revealHint);
 
 /* Event Listeners
 ***********************************/
@@ -324,4 +403,5 @@ joinRed_btn.addEventListener("click", joinRedTeam);
 blueSpy_btn.addEventListener("click", blueSpyMaster);
 redSpy_btn.addEventListener("click", redSpyMaster);
 startGame_btn.addEventListener("click", gameStartSetup);
+hint_btn.addEventListener("click", startGuess);
 }

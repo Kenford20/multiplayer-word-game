@@ -31,6 +31,21 @@ var buttonStates = {
 	red: false
 };
 
+var firstTurn = {
+	blue: false,
+	red: false,
+	numBlueCards: 0,
+	numRedCards: 0,
+	numYellowCards: 7,
+	numBlackCards: 1
+};
+
+var gameTurns = {
+	turnCounter: 0,
+	isBlueTurn: false,
+	isRedTurn: false
+};
+
 /*socket.io setup
 ********************************************/
 // io is an object that creates by the socket function
@@ -47,7 +62,7 @@ var io = require('socket.io')(server,{});
 	socket.emit('nameOfBlueSpy', data.blueSpyMaster);
 	socket.emit('nameOfRedSpy', data.redSpyMaster);
 
-
+	// game setup
 	socket.on('playerName', function(name){
 		data.spectators.push(name);
 		console.log("spectators after entering: " + data.spectators);
@@ -114,6 +129,7 @@ var io = require('socket.io')(server,{});
 		io.sockets.emit('highlightRedSpy', data.redSpyMaster);
 	})
 
+	// game has started
 	socket.on('setUpBoardforSpies', function(boardObject){
 		console.log(boardObject);
 		io.to(data.blueSpyID).emit('youCanSeeTheBoard', boardObject);
@@ -121,12 +137,34 @@ var io = require('socket.io')(server,{});
 	})
 
 	socket.on('blueTeamStarts', function(){
-		io.to(data.blueSpyID).emit('createHintBox');
-		io.sockets.emit('waitingForBlueSpy');
+		firstTurn.blue = true;
+		firstTurn.numBlueCards = 9;
+		firstTurn.numRedCards = 8;
+		gameTurns.isBlueTurn = true;
+		gameTurns.turnCounter++;
+		io.to(data.blueSpyID).emit('createHintBox', firstTurn);
+		io.sockets.emit('waitingForBlueSpy', firstTurn);
+		console.log("blue team starts");
 	})
 
 	socket.on('redTeamStarts', function(){
-		io.to(data.redSpyID).emit('createHintBox');
-		io.sockets.emit('waitingForRedSpy');
+		firstTurn.red = true;
+		firstTurn.numBlueCards = 8;
+		firstTurn.numRedCards = 9;
+		gameTurns.isRedTurn = true;
+		gameTurns.turnCounter++;
+		io.to(data.redSpyID).emit('createHintBox', firstTurn);
+		io.sockets.emit('waitingForRedSpy', firstTurn);
+		console.log("red team starts");
+	})
+
+	socket.on('guessMessage', function(){
+		io.sockets.emit('guessMessage', gameTurns);
+	})
+
+	socket.on('revealHint', function(hintData){
+		hintData.isBlueTurn = gameTurns.isBlueTurn;
+		hintData.isRedTurn = gameTurns.isRedTurn;
+		io.sockets.emit('revealHint', hintData);
 	})
 })

@@ -224,16 +224,24 @@ header h1{
 	text-align:center;
 }
 
+.blue-word{
+	color: #1c64ff;
+}
+
+.red-word{
+	color: #db3328
+}
+
 /* Hints
 --------------------------------------------*/
 .nest2{
 	border:2px solid black;
-	background-color:purple;
+	background-color:#fff68f;
 	text-align:center;
 }
 
 #hint-word, #hint-number{
-	color:white;
+	color:grey;
 }
 
 #input-hint{
@@ -243,6 +251,7 @@ header h1{
 }
 
 #hint-btn{
+	color:purple;
 	padding:10px;
 	border:2px solid black;
 	border-radius:10px;

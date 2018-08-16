@@ -78,14 +78,18 @@
 	</section>
 
 	<section id="instructions">
-		<h4> <span id="team-color">[color]</span> Team, it is your turn to guess! Select a card that matches the hint provided by your team spymaster!</h4>
+		<h4 id="message"> <span id="team-color">[color]</span> Welcome to Kodo Namaewas!!! Please select your team and click start when everybody is ready! </h4>
+		<h2 class="hide" id="blue-waiting"> WAITING FOR <span class="blue-word">BLUE </span>SPYMASTER . . . .</h2>
+		<h2 class="hide" id="red-waiting"> WAITING FOR <span class="red-word"> RED </span> SPY MASTER . . . . </h2>
+		<h2 class="hide" id="blue-guess"> <span class="blue-word"> BLUE  TEAM </span>, IT IS YOUR TURN TO GUESS! </h2>
+		<h2 class="hide" id="red-guess"> <span class="red-word"> RED TEAM </span>, IT IS YOUR TURN TO GUESS! </h2>
 	</section>
 
 	<section class="nest2" id="hint">
-		<h4> The hint is <span id="hint-word">[word typed from spymaster]</span>, There are <span id="hint-number">[number]</span> cards that go with this clue</h4>
+		<h2> The hint is <span id="hint-word">[word typed from spymaster]</span>, There are <span id="hint-number">[number]</span> cards that go with this clue</h2>
+		<button class="btn hide" id="hint-btn">Submit Hint</button>
 		<input class="hide" id="input-hint" placeholder="Enter your hint">
 
-		<button class="btn hide" id="hint-btn">Submit Hint</button>
 	</section>
 
 </body>
