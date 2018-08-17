@@ -16,11 +16,13 @@ app.use(express.static('client'));
 server.listen(3000);
 console.log('Server started!');
 
-var SOCKET_LIST = {};
+var socketIDlist = [];
 var data = {
 	spectators: [],
 	bluePlayers: [],
+	blueIDs: [],
 	redPlayers: [],
+	redIDs: [],
 	blueSpyMaster:'',
 	redSpyMaster:'',
 	blueSpyID:0,
@@ -40,6 +42,10 @@ var firstTurn = {
 	numBlackCards: 1
 };
 
+var gameBoardColors = {
+	cardColor: []
+};
+
 var gameTurns = {
 	turnCounter: 0,
 	isBlueTurn: false,
@@ -52,7 +58,8 @@ var gameTurns = {
 var io = require('socket.io')(server,{});
 
 	io.sockets.on('connection', function(socket){
-	//	console.log('socket connection: '+ socket.id);
+	console.log('socket connection: '+ socket.id);
+	socketIDlist.push(socket.id);
 		
 	//update a new player on the spectators list currently
 	socket.emit('allSpectators', data.spectators);
@@ -72,10 +79,12 @@ var io = require('socket.io')(server,{});
 	socket.on('blue', function(clientName){
 		console.log("Player: " + clientName + " has joined blue team");
 		data.bluePlayers.push(clientName);
+		data.blueIDs.push(socket.id);
 		io.sockets.emit('bluePlayer', clientName);
 		var spectatorIndex = data.spectators.indexOf(clientName);
 		data.spectators.splice(spectatorIndex, 1);
 		io.sockets.emit('removeSpectator', clientName);
+		console.log("BLUE PLAYER IDS: " + data.blueIDs);
 		//console.log("spectators after joining blue team: " + data.spectators);
 	});
 
@@ -83,7 +92,8 @@ var io = require('socket.io')(server,{});
 		console.log("current blue players: " + data.bluePlayers);
 		var bluePlayerIndex = data.bluePlayers.indexOf(bluePlayerToBeRemoved);
 		data.bluePlayers.splice(bluePlayerIndex, 1);
-		//data.redPlayers.push(bluePlayerToBeRemoved);
+		var bluePlayerID = data.blueIDs.indexOf(socket.id);
+		data.blueIDs.splice(bluePlayerID, 1);
 		console.log("Blue players after removal: " + data.bluePlayers);
 		io.sockets.emit('blueToRed', bluePlayerToBeRemoved);
 	})
@@ -91,10 +101,12 @@ var io = require('socket.io')(server,{});
 	socket.on('red', function(clientName){
 		console.log("Player: " + clientName + " has joined red team");
 		data.redPlayers.push(clientName);
+		data.redIDs.push(socket.id);
 		io.sockets.emit('redPlayer', clientName);
 		var spectatorIndex = data.spectators.indexOf(clientName);
 		data.spectators.splice(spectatorIndex, 1);
 		io.sockets.emit('removeSpectator', clientName);
+		console.log("RED PLAYER IDS: " + data.redIDs);
 		//console.log("spectators after joining red team: " + data.spectators);	
 	})
 
@@ -102,7 +114,8 @@ var io = require('socket.io')(server,{});
 		console.log("current red players: " + data.redPlayers);
 		var redPlayerIndex = data.redPlayers.indexOf(redPlayerToBeRemoved);
 		data.redPlayers.splice(redPlayerIndex, 1);
-		//data.bluePlayers.push(redPlayerToBeRemoved);
+		var redPlayerID = data.redIDs.indexOf(socket.id);
+		data.redIDs.splice(redPlayerID, 1);
 		console.log("Red players after removal: " + data.redPlayers);
 		io.sockets.emit('redToBlue', redPlayerToBeRemoved);
 	})
@@ -112,6 +125,7 @@ var io = require('socket.io')(server,{});
 		buttonStates.blue = true;
 		data.blueSpyMaster = nameOfSpyMaster;
 		data.blueSpyID = socket.id;
+		console.log("BLUE SPY ID: " + data.blueSpyID);
 	})
 
 	socket.on('highlightBlueSpy', function(){
@@ -123,6 +137,7 @@ var io = require('socket.io')(server,{});
 		buttonStates.red = true;
 		data.redSpyMaster = nameOfSpyMaster;
 		data.redSpyID = socket.id;
+		console.log("RED SPY ID: " + data.redSpyID);
 	})
 
 	socket.on('highlightRedSpy', function(nameOfRedSpy){
@@ -166,5 +181,18 @@ var io = require('socket.io')(server,{});
 		hintData.isBlueTurn = gameTurns.isBlueTurn;
 		hintData.isRedTurn = gameTurns.isRedTurn;
 		io.sockets.emit('revealHint', hintData);
+	})
+
+	socket.on('timeToGuess', function(){
+		// tell only blue players to take their turn
+		if(gameTurns.isBlueTurn){
+			for(i=0;i<data.blueIDs.length;i++)
+				io.to(data.blueIDs[i]).emit('timeToGuess', gameTurns);
+		}
+		// otherwise tell red players to
+		else{
+			for(i=0;i<data.redIDs.length;i++)
+				io.to(data.redIDs[i]).emit('timeToGuess', gameTurns);
+		}
 	})
 })

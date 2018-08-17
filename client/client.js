@@ -98,17 +98,21 @@ function sendNameToServer(){
 }
 
 function joinBlueTeam(){
-	socket.emit('blue', client.name);
-	client.team = 'blue';
-	client.teamJoinCounter++;
-	console.log("after joining blue: " + client.teamJoinCounter);
+	if(client.name != ''){
+		socket.emit('blue', client.name);
+		client.team = 'blue';
+		client.teamJoinCounter++;
+		console.log("after joining blue: " + client.teamJoinCounter);
+	}
 }
 
 function joinRedTeam(){
-	socket.emit('red', client.name);
-	client.team = 'red';
-	client.teamJoinCounter++;
-	console.log("after joining red: " + client.teamJoinCounter);
+	if(client.name != ''){
+		socket.emit('red', client.name);
+		client.team = 'red';
+		client.teamJoinCounter++;
+		console.log("after joining red: " + client.teamJoinCounter);
+	}
 }
 
 function checkButtonStates(state){
@@ -359,7 +363,20 @@ function startGuess(){
 	var select = document.querySelector("select");
 	select.parentNode.removeChild(select);
 
-	//completeTurn()
+	socket.emit('timeToGuess');
+}
+
+function timeToGuess(gameTurns){
+	var cards = document.querySelectorAll(".card");
+
+	for(i=0; i<cards.length; i++){
+		cards[i].addEventListener("click", revealCardColor);
+	}
+}
+
+function revealCardColor(){
+	console.log(this); // returns the word div that was clicked
+	
 }
 
 /* Sockets
@@ -393,6 +410,7 @@ socket.on('waitingForBlueSpy', waitingMessage);
 socket.on('waitingForRedSpy', waitingMessage);
 socket.on('guessMessage', guessMessage);
 socket.on('revealHint', revealHint);
+socket.on('timeToGuess', timeToGuess);
 
 /* Event Listeners
 ***********************************/
