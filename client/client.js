@@ -11,6 +11,7 @@ const hint_btn = document.querySelector("#hint-btn");
 const submit_name = document.querySelector("#name_btn");
 const name = document.querySelector("#name");
 const gameBoard = document.querySelector("#game-board");
+const allCards = document.querySelectorAll(".card");
 const blueWaitingMessage = document.querySelector("#blue-waiting");
 const redWaitingMessage = document.querySelector("#red-waiting");
 const blueGuessMessage = document.querySelector("#blue-guess");
@@ -276,7 +277,6 @@ function spyMasterBoard(boardObject){
 	// assign random color to each div or card on the game board
 	for(i=0; i<cardColors.length;i++){
 		let randomIndex = boardObject.randomIndices[i];
-		console.log(randomIndex);
 		let randomCardColor = boardObject.divColors[randomIndex];
 		cardColors[i].classList.add(randomCardColor);
 	}
@@ -314,8 +314,8 @@ function waitingMessage(firstTurn){
 		redWaitingMessage.classList.remove("hide");
 }
 
-function guessMessage(gameTurns){
-	if(gameTurns.isBlueTurn){
+function guessMessage(gameData){
+	if(gameData.isBlueTurn){
 		blueWaitingMessage.classList.add("hide");
 		blueGuessMessage.classList.remove("hide");
 	}
@@ -341,7 +341,6 @@ function revealHint(hintData){
 		document.querySelector("#hint-word").style.color = "#db3328";
 		document.querySelector("#hint-number").style.color = "#db3328";
 	}
-
 }
 
 function startGuess(){
@@ -363,20 +362,40 @@ function startGuess(){
 	var select = document.querySelector("select");
 	select.parentNode.removeChild(select);
 
-	socket.emit('timeToGuess');
+	// problem
+	socket.emit('pickCards');
 }
 
-function timeToGuess(gameTurns){
-	var cards = document.querySelectorAll(".card");
-
-	for(i=0; i<cards.length; i++){
-		cards[i].addEventListener("click", revealCardColor);
+function pickCards(gameData){
+	for(i=0; i<allCards.length; i++){
+		allCards[i].addEventListener("click", function(){
+		 	whichCardWasPicked(this, gameData); 
+		},false);
 	}
 }
 
-function revealCardColor(){
-	console.log(this); // returns the word div that was clicked
-	
+function whichCardWasPicked(cardPicked, gameData){
+	var cardCounter = 0;
+
+	for(i=0;i<allCards.length;i++){
+		if(allCards[i] == cardPicked)
+			break;
+		else{
+			cardCounter++;
+		}
+	}
+	console.log(cardCounter);
+	socket.emit('cardWasPicked', cardCounter);
+}
+
+function revealCardColor(gameData){
+	if(gameData.numCardsPicked <= gameData.numCardsToGuess){
+		var cardSelected = gameData.cardSelected;
+		console.log("card selected: " +cardSelected);
+		allCards[cardSelected].classList.add(gameData.gameBoardColors[cardSelected]);
+	}
+	//else
+		//endTurn();
 }
 
 /* Sockets
@@ -410,7 +429,8 @@ socket.on('waitingForBlueSpy', waitingMessage);
 socket.on('waitingForRedSpy', waitingMessage);
 socket.on('guessMessage', guessMessage);
 socket.on('revealHint', revealHint);
-socket.on('timeToGuess', timeToGuess);
+socket.on('pickCards', pickCards);
+socket.on('revealCardColor', revealCardColor);
 
 /* Event Listeners
 ***********************************/

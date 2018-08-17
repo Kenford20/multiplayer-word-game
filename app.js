@@ -42,14 +42,16 @@ var firstTurn = {
 	numBlackCards: 1
 };
 
-var gameBoardColors = {
-	cardColor: []
-};
+//var gameBoardColors = [];
 
-var gameTurns = {
+var gameData = {
 	turnCounter: 0,
 	isBlueTurn: false,
-	isRedTurn: false
+	isRedTurn: false,
+	numCardsToGuess: 0,
+	numCardsPicked: 0,
+	gameBoardColors: [],
+	cardSelected: 0
 };
 
 /*socket.io setup
@@ -146,17 +148,27 @@ var io = require('socket.io')(server,{});
 
 	// game has started
 	socket.on('setUpBoardforSpies', function(boardObject){
-		console.log(boardObject);
+		//console.log(boardObject);
+		for(i=0;i<boardObject.randomIndices.length; i++){
+			let randomIndex = boardObject.randomIndices[i];
+			let randomColor = boardObject.divColors[randomIndex];
+			gameData.gameBoardColors.push(randomColor);
+		}
+		console.log(gameData.gameBoardColors);
 		io.to(data.blueSpyID).emit('youCanSeeTheBoard', boardObject);
 		io.to(data.redSpyID).emit('youCanSeeTheBoard', boardObject);
+	})
+
+	socket.on('cardColorData', function(cardColors){
+		console.log(cardColors);
 	})
 
 	socket.on('blueTeamStarts', function(){
 		firstTurn.blue = true;
 		firstTurn.numBlueCards = 9;
 		firstTurn.numRedCards = 8;
-		gameTurns.isBlueTurn = true;
-		gameTurns.turnCounter++;
+		gameData.isBlueTurn = true;
+		gameData.turnCounter++;
 		io.to(data.blueSpyID).emit('createHintBox', firstTurn);
 		io.sockets.emit('waitingForBlueSpy', firstTurn);
 		console.log("blue team starts");
@@ -166,33 +178,42 @@ var io = require('socket.io')(server,{});
 		firstTurn.red = true;
 		firstTurn.numBlueCards = 8;
 		firstTurn.numRedCards = 9;
-		gameTurns.isRedTurn = true;
-		gameTurns.turnCounter++;
+		gameData.isRedTurn = true;
+		gameData.turnCounter++;
 		io.to(data.redSpyID).emit('createHintBox', firstTurn);
 		io.sockets.emit('waitingForRedSpy', firstTurn);
 		console.log("red team starts");
 	})
 
 	socket.on('guessMessage', function(){
-		io.sockets.emit('guessMessage', gameTurns);
+		io.sockets.emit('guessMessage', gameData);
 	})
 
 	socket.on('revealHint', function(hintData){
-		hintData.isBlueTurn = gameTurns.isBlueTurn;
-		hintData.isRedTurn = gameTurns.isRedTurn;
+		gameData.numCardsToGuess = hintData.number;
+		hintData.isBlueTurn = gameData.isBlueTurn;
+		hintData.isRedTurn = gameData.isRedTurn;
 		io.sockets.emit('revealHint', hintData);
 	})
 
-	socket.on('timeToGuess', function(){
+	socket.on('pickCards', function(){
 		// tell only blue players to take their turn
-		if(gameTurns.isBlueTurn){
+		if(gameData.isBlueTurn){
 			for(i=0;i<data.blueIDs.length;i++)
-				io.to(data.blueIDs[i]).emit('timeToGuess', gameTurns);
+				io.to(data.blueIDs[i]).emit('pickCards', gameData);
 		}
 		// otherwise tell red players to
 		else{
 			for(i=0;i<data.redIDs.length;i++)
-				io.to(data.redIDs[i]).emit('timeToGuess', gameTurns);
+				io.to(data.redIDs[i]).emit('pickCards', gameData);
 		}
 	})
+
+	socket.on('cardWasPicked', function(cardCounter){
+		gameData.numCardsPicked++;
+		gameData.cardSelected = cardCounter;
+		console.log(gameData);
+		io.sockets.emit('revealCardColor', gameData);
+	})
+
 })
