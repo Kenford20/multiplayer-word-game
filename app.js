@@ -17,7 +17,7 @@ server.listen(3000);
 console.log('Server started!');
 
 var socketIDlist = [];
-var data = {
+var playerData = {
 	spectators: [],
 	bluePlayers: [],
 	blueIDs: [],
@@ -33,25 +33,20 @@ var buttonStates = {
 	red: false
 };
 
-var firstTurn = {
-	blue: false,
-	red: false,
-	numBlueCards: 0,
-	numRedCards: 0,
-	numYellowCards: 7,
-	numBlackCards: 1
-};
-
-//var gameBoardColors = [];
-
-var gameData = {
+var gameData = {	
+	gameBoardColors: [],	
 	turnCounter: 0,
 	isBlueTurn: false,
 	isRedTurn: false,
+	numBlueCards: 0,
+	numRedCards: 0,
+	numYellowCards: 7,
+	numBlackCards: 1,
 	numCardsToGuess: 0,
 	numCardsPicked: 0,
-	gameBoardColors: [],
-	cardSelected: 0
+	cardSelected: 0,
+	turnIsOver: false,
+	clientCallCounter: 0
 };
 
 /*socket.io setup
@@ -64,86 +59,86 @@ var io = require('socket.io')(server,{});
 	socketIDlist.push(socket.id);
 		
 	//update a new player on the spectators list currently
-	socket.emit('allSpectators', data.spectators);
-	socket.emit('allBluePlayers', data.bluePlayers);
-	socket.emit('allRedPlayers', data.redPlayers);
+	socket.emit('allSpectators', playerData.spectators);
+	socket.emit('allBluePlayers', playerData.bluePlayers);
+	socket.emit('allRedPlayers', playerData.redPlayers);
 	socket.emit('buttonStates', buttonStates);
-	socket.emit('nameOfBlueSpy', data.blueSpyMaster);
-	socket.emit('nameOfRedSpy', data.redSpyMaster);
+	socket.emit('nameOfBlueSpy', playerData.blueSpyMaster);
+	socket.emit('nameOfRedSpy', playerData.redSpyMaster);
 
 	// game setup
 	socket.on('playerName', function(name){
-		data.spectators.push(name);
-		console.log("spectators after entering: " + data.spectators);
+		playerData.spectators.push(name);
+		console.log("spectators after entering: " + playerData.spectators);
 		io.sockets.emit('playerNames', name);
 	});
 
 	socket.on('blue', function(clientName){
 		console.log("Player: " + clientName + " has joined blue team");
-		data.bluePlayers.push(clientName);
-		data.blueIDs.push(socket.id);
+		playerData.bluePlayers.push(clientName);
+		playerData.blueIDs.push(socket.id);
 		io.sockets.emit('bluePlayer', clientName);
-		var spectatorIndex = data.spectators.indexOf(clientName);
-		data.spectators.splice(spectatorIndex, 1);
+		var spectatorIndex = playerData.spectators.indexOf(clientName);
+		playerData.spectators.splice(spectatorIndex, 1);
 		io.sockets.emit('removeSpectator', clientName);
-		console.log("BLUE PLAYER IDS: " + data.blueIDs);
-		//console.log("spectators after joining blue team: " + data.spectators);
+		console.log("BLUE PLAYER IDS: " + playerData.blueIDs);
+		//console.log("spectators after joining blue team: " + playerData.spectators);
 	});
 
 	socket.on('removeFromBlue', function(bluePlayerToBeRemoved){
-		console.log("current blue players: " + data.bluePlayers);
-		var bluePlayerIndex = data.bluePlayers.indexOf(bluePlayerToBeRemoved);
-		data.bluePlayers.splice(bluePlayerIndex, 1);
-		var bluePlayerID = data.blueIDs.indexOf(socket.id);
-		data.blueIDs.splice(bluePlayerID, 1);
-		console.log("Blue players after removal: " + data.bluePlayers);
+		console.log("current blue players: " + playerData.bluePlayers);
+		var bluePlayerIndex = playerData.bluePlayers.indexOf(bluePlayerToBeRemoved);
+		playerData.bluePlayers.splice(bluePlayerIndex, 1);
+		var bluePlayerID = playerData.blueIDs.indexOf(socket.id);
+		playerData.blueIDs.splice(bluePlayerID, 1);
+		console.log("Blue players after removal: " + playerData.bluePlayers);
 		io.sockets.emit('blueToRed', bluePlayerToBeRemoved);
 	})
 
 	socket.on('red', function(clientName){
 		console.log("Player: " + clientName + " has joined red team");
-		data.redPlayers.push(clientName);
-		data.redIDs.push(socket.id);
+		playerData.redPlayers.push(clientName);
+		playerData.redIDs.push(socket.id);
 		io.sockets.emit('redPlayer', clientName);
-		var spectatorIndex = data.spectators.indexOf(clientName);
-		data.spectators.splice(spectatorIndex, 1);
+		var spectatorIndex = playerData.spectators.indexOf(clientName);
+		playerData.spectators.splice(spectatorIndex, 1);
 		io.sockets.emit('removeSpectator', clientName);
-		console.log("RED PLAYER IDS: " + data.redIDs);
-		//console.log("spectators after joining red team: " + data.spectators);	
+		console.log("RED PLAYER IDS: " + playerData.redIDs);
+		//console.log("spectators after joining red team: " + playerData.spectators);	
 	})
 
 	socket.on('removeFromRed', function(redPlayerToBeRemoved){
-		console.log("current red players: " + data.redPlayers);
-		var redPlayerIndex = data.redPlayers.indexOf(redPlayerToBeRemoved);
-		data.redPlayers.splice(redPlayerIndex, 1);
-		var redPlayerID = data.redIDs.indexOf(socket.id);
-		data.redIDs.splice(redPlayerID, 1);
-		console.log("Red players after removal: " + data.redPlayers);
+		console.log("current red players: " + playerData.redPlayers);
+		var redPlayerIndex = playerData.redPlayers.indexOf(redPlayerToBeRemoved);
+		playerData.redPlayers.splice(redPlayerIndex, 1);
+		var redPlayerID = playerData.redIDs.indexOf(socket.id);
+		playerData.redIDs.splice(redPlayerID, 1);
+		console.log("Red players after removal: " + playerData.redPlayers);
 		io.sockets.emit('redToBlue', redPlayerToBeRemoved);
 	})
 
 	socket.on('blueSpy', function(nameOfSpyMaster){
 		io.sockets.emit('blueSpyButton', nameOfSpyMaster);
 		buttonStates.blue = true;
-		data.blueSpyMaster = nameOfSpyMaster;
-		data.blueSpyID = socket.id;
-		console.log("BLUE SPY ID: " + data.blueSpyID);
+		playerData.blueSpyMaster = nameOfSpyMaster;
+		playerData.blueSpyID = socket.id;
+		console.log("BLUE SPY ID: " + playerData.blueSpyID);
 	})
 
 	socket.on('highlightBlueSpy', function(){
-		io.sockets.emit('highlightBlueSpy', data.blueSpyMaster);
+		io.sockets.emit('highlightBlueSpy', playerData.blueSpyMaster);
 	})
 	
 	socket.on('redSpy', function(nameOfSpyMaster){
 		io.sockets.emit('redSpyButton', nameOfSpyMaster);
 		buttonStates.red = true;
-		data.redSpyMaster = nameOfSpyMaster;
-		data.redSpyID = socket.id;
-		console.log("RED SPY ID: " + data.redSpyID);
+		playerData.redSpyMaster = nameOfSpyMaster;
+		playerData.redSpyID = socket.id;
+		console.log("RED SPY ID: " + playerData.redSpyID);
 	})
 
 	socket.on('highlightRedSpy', function(nameOfRedSpy){
-		io.sockets.emit('highlightRedSpy', data.redSpyMaster);
+		io.sockets.emit('highlightRedSpy', playerData.redSpyMaster);
 	})
 
 	// game has started
@@ -155,36 +150,33 @@ var io = require('socket.io')(server,{});
 			gameData.gameBoardColors.push(randomColor);
 		}
 		console.log(gameData.gameBoardColors);
-		io.to(data.blueSpyID).emit('youCanSeeTheBoard', boardObject);
-		io.to(data.redSpyID).emit('youCanSeeTheBoard', boardObject);
-	})
-
-	socket.on('cardColorData', function(cardColors){
-		console.log(cardColors);
+		io.to(playerData.blueSpyID).emit('youCanSeeTheBoard', boardObject);
+		io.to(playerData.redSpyID).emit('youCanSeeTheBoard', boardObject);
 	})
 
 	socket.on('blueTeamStarts', function(){
-		firstTurn.blue = true;
-		firstTurn.numBlueCards = 9;
-		firstTurn.numRedCards = 8;
 		gameData.isBlueTurn = true;
+		gameData.isRedTurn = false;
+		gameData.numBlueCards = 9;
+		gameData.numRedCards = 8;
 		gameData.turnCounter++;
-		io.to(data.blueSpyID).emit('createHintBox', firstTurn);
-		io.sockets.emit('waitingForBlueSpy', firstTurn);
+		io.to(playerData.blueSpyID).emit('createHintBox', gameData);
+		io.sockets.emit('waitingForBlueSpy', gameData);
 		console.log("blue team starts");
 	})
 
 	socket.on('redTeamStarts', function(){
-		firstTurn.red = true;
-		firstTurn.numBlueCards = 8;
-		firstTurn.numRedCards = 9;
 		gameData.isRedTurn = true;
+		gameData.isBlueTurn = false;
+		gameData.numBlueCards = 8;
+		gameData.numRedCards = 9;
 		gameData.turnCounter++;
-		io.to(data.redSpyID).emit('createHintBox', firstTurn);
-		io.sockets.emit('waitingForRedSpy', firstTurn);
+		io.to(playerData.redSpyID).emit('createHintBox', gameData);
+		io.sockets.emit('waitingForRedSpy', gameData);
 		console.log("red team starts");
 	})
 
+	// 
 	socket.on('guessMessage', function(){
 		io.sockets.emit('guessMessage', gameData);
 	})
@@ -193,27 +185,72 @@ var io = require('socket.io')(server,{});
 		gameData.numCardsToGuess = hintData.number;
 		hintData.isBlueTurn = gameData.isBlueTurn;
 		hintData.isRedTurn = gameData.isRedTurn;
+		gameData.numCardsPicked = 0;
+		gameData.turnIsOver = false;
 		io.sockets.emit('revealHint', hintData);
 	})
 
 	socket.on('pickCards', function(){
+
 		// tell only blue players to take their turn
 		if(gameData.isBlueTurn){
-			for(i=0;i<data.blueIDs.length;i++)
-				io.to(data.blueIDs[i]).emit('pickCards', gameData);
+			for(i=0;i<playerData.blueIDs.length;i++)
+				io.to(playerData.blueIDs[i]).emit('pickCards', gameData);
 		}
 		// otherwise tell red players to
 		else{
-			for(i=0;i<data.redIDs.length;i++)
-				io.to(data.redIDs[i]).emit('pickCards', gameData);
+			for(i=0;i<playerData.redIDs.length;i++)
+				io.to(playerData.redIDs[i]).emit('pickCards', gameData);
 		}
 	})
 
 	socket.on('cardWasPicked', function(cardCounter){
+		gameData.clientCallCounter = 0;
 		gameData.numCardsPicked++;
 		gameData.cardSelected = cardCounter;
 		console.log(gameData);
 		io.sockets.emit('revealCardColor', gameData);
+	})
+
+	socket.on('updateCardCount', function(colorOfCard){
+		gameData.clientCallCounter++;
+		if(gameData.clientCallCounter <= 1){
+			if(colorOfCard == 'blue')
+				gameData.numBlueCards--;
+			else if(colorOfCard == 'red')
+				gameData.numRedCards--;
+			else if(colorOfCard == 'yellow')
+				gameData.numYellowCards--;
+		}
+	})
+
+	socket.on('endTurn', function(){
+		gameData.clientCallCounter++;
+		gameData.turnIsOver = true;
+		if(gameData.clientCallCounter <= 1){
+			//gameData.turnIsOver = true;
+			gameData.turnCounter++;
+			console.log(gameData.isBlueTurn);
+			console.log(gameData.isRedTurn);
+			if(gameData.isBlueTurn){
+				// switch to red team's turn
+				console.log("it is now red turn");
+				gameData.isBlueTurn = false;
+				gameData.isRedTurn = true;
+				io.to(playerData.redSpyID).emit('createHintBox', gameData);
+				io.sockets.emit('waitingForRedSpy', gameData);
+				io.sockets.emit('donePickingCards');
+			}
+			else{
+				// switch to blue team's turn
+				console.log("it is now blue turn");
+				gameData.isBlueTurn = true;
+				gameData.isRedTurn = false;
+				io.to(playerData.blueSpyID).emit('createHintBox', gameData);
+				io.sockets.emit('waitingForBlueSpy', gameData);
+				io.sockets.emit('donePickingCards');
+			}
+		}
 	})
 
 })
