@@ -30,7 +30,8 @@ var client = {
 	spymaster: false,
 	yourTurn: false,
 	teamJoinCounter: 0,
-	isOnATeam: false
+	isOnATeam: false,
+	canGuess: false
 };
 
 var cardType = {
@@ -45,10 +46,14 @@ var numberOfCards = {
 	black: 1
 };
 
+var gameHasStarted = false;
 var socket = io();
 
 /* Function Definitions
 *************************************/
+
+// the functions below generate the HTML of each player with their respect teams to
+// the currently connected clients and also the ones that join later
 function createSpectators(spectatorData){
 	createName(spectatorData, spectatorList);
 }
@@ -98,39 +103,77 @@ function sendNameToServer(){
 	name.classList.add("hide");
 }
 
+// you can join a team if game has not started yet
+// you cannot join a team that you're already on
+// you cannot join a team unless you have a name
 function joinBlueTeam(){
-	if(client.name != ''){
-		socket.emit('blue', client.name);
-		client.team = 'blue';
-		client.teamJoinCounter++;
-		console.log("after joining blue: " + client.teamJoinCounter);
+	if(!gameHasStarted){
+		if(client.name != ''){
+			if(client.team != 'blue'){
+				socket.emit('blue', client.name);
+				client.team = 'blue';
+				client.teamJoinCounter++;
+				console.log("after joining blue: " + client.teamJoinCounter);
+			}
+		}
 	}
 }
 
 function joinRedTeam(){
-	if(client.name != ''){
-		socket.emit('red', client.name);
-		client.team = 'red';
-		client.teamJoinCounter++;
-		console.log("after joining red: " + client.teamJoinCounter);
+	if(!gameHasStarted){
+		if(client.name != ''){
+			if(client.team != 'red'){
+				socket.emit('red', client.name);
+				client.team = 'red';
+				client.teamJoinCounter++;
+				console.log("after joining red: " + client.teamJoinCounter);
+			}
+		}
 	}
 }
 
+// take your name out of the spectator list once you join a team
+function removeSpectator(spectator){
+	var childs = spectatorList.querySelectorAll("h3");
+	for(i=0;i<childs.length;i++){
+		if(childs[i].innerHTML == (spectator + '  '))
+			spectatorList.removeChild(childs[i]);
+	}
+
+	console.log(client.name + " is on a team: " + client.isOnATeam);
+
+// handles team changing of clients (you're switching teams if counter > 1)
+	if(client.teamJoinCounter > 1 && client.name == spectator){
+		if(client.team == "red")
+			socket.emit('removeFromBlue', spectator);
+		else if(client.team == "blue" && client.name == spectator)
+			socket.emit('removeFromRed', spectator);
+	}
+	client.isOnATeam = true;
+}
+
+// checks if the spy buttons were clicked
 function checkButtonStates(state){
 	if(state.blue == true)
 		removeBlueSpyButton();
 }
 
+// send client information to server about the spies
 function redSpyMaster(){
-	client.spymaster = true;
-	socket.emit('redSpy', client.name);
+	if(client.team == 'red'){
+		client.spymaster = true;
+		socket.emit('redSpy', client.name);
+	}
 }
 
 function blueSpyMaster(){
-	client.spymaster = true;
-	socket.emit('blueSpy', client.name);
+	if(client.team == 'blue'){
+		client.spymaster = true;
+		socket.emit('blueSpy', client.name);
+	}
 }
 
+// remove spy button if someone has selected it already and reveal message that shows who the spy is
 function removeRedSpyButton(nameOfRedSpy){
 	var redSpy = document.querySelector("#red-spy-message");
 	var redSpyName = document.querySelector("#red-spy-name");
@@ -155,25 +198,7 @@ function removeBlueSpyButton(nameOfBlueSpy){
 	socket.emit('highlightBlueSpy');
 }
 
-function removeSpectator(spectator){
-	var childs = spectatorList.querySelectorAll("h3");
-	for(i=0;i<childs.length;i++){
-		if(childs[i].innerHTML == (spectator + '  '))
-			spectatorList.removeChild(childs[i]);
-	}
-
-	console.log(client.name + " is on a team: " + client.isOnATeam);
-
-// handles team changing of clients (you're switching teams if counter > 1)
-	if(client.teamJoinCounter > 1 && client.name == spectator){
-		if(client.team == "red")
-			socket.emit('removeFromBlue', spectator);
-		else if(client.team == "blue" && client.name == spectator)
-			socket.emit('removeFromRed', spectator);
-	}
-	client.isOnATeam = true;
-}
-
+// removes the HTML and name of a team switching client
 function blueToRed(spectator){
 	// blue player switches to red team
 	var childs = bluePlayerList.querySelectorAll("h3");
@@ -192,6 +217,7 @@ function redToBlue(spectator){
 	}
 }
 
+// adds a css background to the client that is the spy master for everyone to see
 function highlightRedSpy(nameOfSpy){
 	var redPlayers = redPlayerList.querySelectorAll("h3");
 	 
@@ -213,6 +239,7 @@ function highlightBlueSpy(nameOfSpy){
 	}
 }
 
+// takes an array of numbers and shuffles the indices around
 function shuffleNumbers(array) {
     var i = array.length;
     var j = 0;
@@ -230,48 +257,57 @@ function shuffleNumbers(array) {
     return array;
 }
 
-/* GAME HAS NOW STARTED BELOW
+/* 
 ****************************************************************
+************ GAME HAS NOW STARTED BELOW ************************
 ****************************************************************/
 
 function gameStartSetup(){
+	socket.emit('gameHasStarted');
 
 	// start game only when the two spymasters are chosen
 	if(thereIsABlueSpy && thereIsARedSpy){
-		var boardData = {
-			randomIndices: [],
-			divColors: []
+		if(!gameHasStarted){
+
+			var boardData = {
+				randomIndices: [],
+				divColors: []
+			}
+
+			var randomNumbers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24];
+
+			shuffleNumbers(randomNumbers);
+			boardData.randomIndices = randomNumbers;
+			var randomTeamStarts = Math.floor(Math.random() * 2); // returns 0 or 1
+
+			if(randomTeamStarts == 0){
+				whichTeamStarts = cardType.blueTeamStarts;
+				socket.emit('blueTeamStarts');
+				numberOfCards.blue = 9;
+				numberOfCards.red = 8;
+			}
+			else if(randomTeamStarts == 1){
+				whichTeamStarts = cardType.redTeamStarts;
+				socket.emit('redTeamStarts');
+				numberOfCards.blue = 8;
+				numberOfCards.red = 9;
+			}
+			console.log(numberOfCards);
+			boardData.divColors = whichTeamStarts;
+
+			socket.emit('setUpBoardforSpies', boardData);
+
+			// this is for the words
+			/*var gameWords = gameBoard.querySelectorAll("a");
+			for(i=0;i<gameWords.length;i++){
+			gameWords[i].innerHTML = randomWord;
+		} */
 		}
-
-		var randomNumbers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24];
-
-		shuffleNumbers(randomNumbers);
-		boardData.randomIndices = randomNumbers;
-		var randomTeamStarts = Math.floor(Math.random() * 2); // returns 0 or 1
-
-		if(randomTeamStarts == 0){
-			whichTeamStarts = cardType.blueTeamStarts;
-			socket.emit('blueTeamStarts');
-			numberOfCards.blue = 9;
-			numberOfCards.red = 8;
-		}
-		else if(randomTeamStarts == 1){
-			whichTeamStarts = cardType.redTeamStarts;
-			socket.emit('redTeamStarts');
-			numberOfCards.blue = 8;
-			numberOfCards.red = 9;
-		}
-		console.log(numberOfCards);
-		boardData.divColors = whichTeamStarts;
-
-		socket.emit('setUpBoardforSpies', boardData);
 	}
+}
 
-	// this is for the words
-	/*var gameWords = gameBoard.querySelectorAll("a");
-	for(i=0;i<gameWords.length;i++){
-		gameWords[i].innerHTML = randomWord;
-	} */
+function updateGameStatus(){
+	gameHasStarted = true;
 }
 
 function spyMasterBoard(boardObject){
@@ -306,19 +342,23 @@ function createHintBox(gameData){
 }
 
 function blueTeamWaits(gameData){
-	document.querySelector("#message").innerHTML = "";
-	blueWaitingMessage.classList.remove("hide");
-	redWaitingMessage.classList.add("hide");
-	redGuessMessage.classList.add("hide");
-	document.querySelector("#hint-message").classList.add("hide");
+	if(!gameData.gameOver){
+		document.querySelector("#message").innerHTML = "";
+		blueWaitingMessage.classList.remove("hide");
+		redWaitingMessage.classList.add("hide");
+		redGuessMessage.classList.add("hide");
+		document.querySelector("#hint-message").classList.add("hide");
+	}
 }
 
 function redTeamWaits(gameData){
-	document.querySelector("#message").innerHTML = "";
-	redWaitingMessage.classList.remove("hide");
-	blueWaitingMessage.classList.add("hide");
-	blueGuessMessage.classList.add("hide");
-	document.querySelector("#hint-message").classList.add("hide");
+	if(!gameData.gameOver){
+		document.querySelector("#message").innerHTML = "";
+		redWaitingMessage.classList.remove("hide");
+		blueWaitingMessage.classList.add("hide");
+		blueGuessMessage.classList.add("hide");
+		document.querySelector("#hint-message").classList.add("hide");
+	}
 }
 
 /*
@@ -398,20 +438,23 @@ function revealHint(hintData){
 
 // creates an event listener for all the cards and sends the card info on click
 function pickCards(gameData){
+	client.canGuess = true;
 	/*for(i=0; i<allCards.length; i++){
 		allCards[i].addEventListener("click", function{
 		 	whichCardWasPicked(this, gameData); 
 		});
-	}*/
-
+	}
+	
 	for(i=0; i<allCards.length; i++){
 		allCards[i].addEventListener("click", whichCardWasPicked);
-	}
+	}*/
 }
 
 // determines which card was selected based on the index in the array of cards
 function whichCardWasPicked(){
-	var cardCounter = 0;
+	console.log(client.canGuess);
+	if(client.canGuess){
+		var cardCounter = 0;
 
 		for(i=0;i<allCards.length;i++){
 			if(allCards[i] == this) // this = the card selected
@@ -422,6 +465,28 @@ function whichCardWasPicked(){
 		}
 		console.log(cardCounter);
 		socket.emit('cardWasPicked', cardCounter);
+	}
+}
+
+// just changes styles for spies when a card is selected so they know what the guesses are
+function revealCardForSpies(gameData){
+	var word = allCards[gameData.cardSelected].querySelector("a");
+	word.style.textDecoration = "line-through";
+
+	if(gameData.gameBoardColors[gameData.cardSelected] == 'blue'){
+		allCards[gameData.cardSelected].style.border = "15px solid #1c64ff";
+		allCards[gameData.cardSelected].style.background = "white";
+	}
+	else if(gameData.gameBoardColors[gameData.cardSelected] == 'red'){
+		allCards[gameData.cardSelected].style.border = "15px solid #db3328";
+		allCards[gameData.cardSelected].style.background = "white";
+	}
+	else if(gameData.gameBoardColors[gameData.cardSelected] == 'yellow'){
+		allCards[gameData.cardSelected].style.border = "15px solid #fff68f";
+		allCards[gameData.cardSelected].style.background = "white";
+	}
+	else
+		allCards[gameData.cardSelected].style.border = "15px solid white";
 }
 
 // receives the selected card from above and reveals its true color from the game board
@@ -431,17 +496,30 @@ function revealCardColor(gameData){
 	var cardSelected = gameData.cardSelected;
 	console.log("card selected: " +cardSelected);
 	allCards[cardSelected].classList.add(gameData.gameBoardColors[cardSelected]);
-	
+	socket.emit('updateCardCount', gameData.gameBoardColors[cardSelected]);
+
 	if(gameData.numCardsPicked < gameData.numCardsToGuess){
-			socket.emit('updateCardCount', gameData.gameBoardColors[cardSelected]);
-			if(gameData.gameBoardColors[cardSelected] == 'yellow'){
-				socket.emit('endTurn');
-				console.log("turn has ended becasue you chose a yellow card");
-			}
-			if(gameData.gameBoardColors[cardSelected] == 'black')
-				socket.emit('endGame');
+		if(gameData.gameBoardColors[cardSelected] == 'yellow'){
+			socket.emit('endTurn');
+			console.log("turn has ended becasue you chose a yellow card");
 		}
+		if(gameData.isBlueTurn)
+			if(gameData.gameBoardColors[cardSelected] == 'red'){
+				socket.emit('endTurn');
+				console.log("turn has ended because you chose the opposite team color (red)");
+			}
+		if(gameData.isRedTurn)
+			if(gameData.gameBoardColors[cardSelected] == 'blue'){
+				socket.emit('endTurn');
+				console.log("turn has ended because you chose the opposite team color (blue)");
+			}
+		if(gameData.gameBoardColors[cardSelected] == 'black'){
+			console.log("game over: black card");
+			socket.emit('blackCard');
+		}
+	}
 	else{
+		socket.emit('updateCardCount', gameData.gameBoardColors[cardSelected]);
 		socket.emit('endTurn');
 		console.log("turn has ended, out of card selections");
 	}
@@ -450,9 +528,32 @@ function revealCardColor(gameData){
 function removeEventListeners(){
 	console.log("removing event listeners");
 	
-	for(i=0;i<allCards.length;i++){
+	client.canGuess = false;
+	/*for(i=0;i<allCards.length;i++){
 		allCards[i].removeEventListener("click", whichCardWasPicked);
-	}
+	}*/
+}
+
+function blueWins(){
+	document.querySelector("#blue-wins").classList.remove("hide");
+	document.querySelector("#congrats").classList.remove("hide");
+	document.querySelector("#congrats").classList.add("blue-word");
+	document.querySelector("#hint-message").classList.add("hide");
+	blueWaitingMessage.classList.add("hide");
+	redWaitingMessage.classList.add("hide");
+	blueGuessMessage.classList.add("hide");
+	redGuessMessage.classList.add("hide");
+}
+
+function redWins(){
+	document.querySelector("#red-wins").classList.remove("hide");
+	document.querySelector("#congrats").classList.remove("hide");
+	document.querySelector("#congrats").classList.add("red-word");
+	document.querySelector("#hint-message").classList.add("hide");
+	blueWaitingMessage.classList.add("hide");
+	redWaitingMessage.classList.add("hide");
+	blueGuessMessage.classList.add("hide");
+	redGuessMessage.classList.add("hide");
 }
 
 /* Sockets
@@ -480,6 +581,7 @@ socket.on('highlightBlueSpy', highlightBlueSpy);
 socket.on('highlightRedSpy', highlightRedSpy);
 
 // game started
+socket.on('gameHasStarted', updateGameStatus);
 socket.on('youCanSeeTheBoard', spyMasterBoard);
 socket.on('createHintBox', createHintBox);
 socket.on('waitingForBlueSpy', blueTeamWaits);
@@ -488,7 +590,10 @@ socket.on('guessMessage', guessMessage);
 socket.on('revealHint', revealHint);
 socket.on('pickCards', pickCards);
 socket.on('revealCardColor', revealCardColor);
+socket.on('guessHasBeenMade', revealCardForSpies);
 socket.on('donePickingCards', removeEventListeners);
+socket.on('blueWins', blueWins);
+socket.on('redWins', redWins);
 
 /* Event Listeners
 ***********************************/
@@ -499,4 +604,9 @@ blueSpy_btn.addEventListener("click", blueSpyMaster);
 redSpy_btn.addEventListener("click", redSpyMaster);
 startGame_btn.addEventListener("click", gameStartSetup);
 hint_btn.addEventListener("click", startGuess);
+
+for(i=0; i<allCards.length; i++){
+	allCards[i].addEventListener("click", whichCardWasPicked);
+}
+
 }

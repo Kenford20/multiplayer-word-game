@@ -61,6 +61,15 @@ header h1{
 	border-radius:10px;
 }
 
+#restart-game{
+	background-color:white;
+	padding:10px;
+	color:grey;
+	width:200px;
+	border: 3px solid black;
+	border-radius:10px;
+}
+
 /* Gameboard 
 --------------------------------------------*/
 .nest{
@@ -229,7 +238,7 @@ header h1{
 }
 
 .red-word{
-	color: #db3328
+	color: #db3328;
 }
 
 /* Hints

@@ -46,7 +46,10 @@ var gameData = {
 	numCardsPicked: 0,
 	cardSelected: 0,
 	turnIsOver: false,
-	clientCallCounter: 0
+	clientCallCounter: 0,
+	runOnce: true,
+	runOnce2: true,
+	gameOver: false
 };
 
 /*socket.io setup
@@ -142,6 +145,11 @@ var io = require('socket.io')(server,{});
 	})
 
 	// game has started
+	/***********************************/
+	socket.on('gameHasStarted', function(){
+		io.sockets.emit('gameHasStarted');
+	})
+
 	socket.on('setUpBoardforSpies', function(boardObject){
 		//console.log(boardObject);
 		for(i=0;i<boardObject.randomIndices.length; i++){
@@ -187,6 +195,8 @@ var io = require('socket.io')(server,{});
 		hintData.isRedTurn = gameData.isRedTurn;
 		gameData.numCardsPicked = 0;
 		gameData.turnIsOver = false;
+		gameData.runOnce = true;
+		gameData.runOnce2 = true;
 		io.sockets.emit('revealHint', hintData);
 	})
 
@@ -205,33 +215,56 @@ var io = require('socket.io')(server,{});
 	})
 
 	socket.on('cardWasPicked', function(cardCounter){
-		gameData.clientCallCounter = 0;
+		//gameData.clientCallCounter = 0;
+		gameData.clientCallCounter++;
 		gameData.numCardsPicked++;
 		gameData.cardSelected = cardCounter;
-		console.log(gameData);
+		gameData.runOnce2 = true;
+		io.to(playerData.blueSpyID).emit('guessHasBeenMade', gameData);
+		io.to(playerData.redSpyID).emit('guessHasBeenMade', gameData);
 		io.sockets.emit('revealCardColor', gameData);
 	})
 
 	socket.on('updateCardCount', function(colorOfCard){
-		gameData.clientCallCounter++;
-		if(gameData.clientCallCounter <= 1){
+		gameData.clientCallCounter = 0;
+
+		if(gameData.runOnce2){
+			gameData.runOnce2 = false;
+
 			if(colorOfCard == 'blue')
 				gameData.numBlueCards--;
 			else if(colorOfCard == 'red')
 				gameData.numRedCards--;
 			else if(colorOfCard == 'yellow')
 				gameData.numYellowCards--;
+		
+			console.log("blue: " + gameData.numBlueCards + "red: " + gameData.numRedCards + "yellow: " + gameData.numYellowCards);
+		
+			if(gameData.numBlueCards == 0){
+				gameData.gameOver = true;
+				io.sockets.emit('blueWins');
+			}
+			else if(gameData.numRedCards == 0){
+				gameData.gameOver = true;
+				io.sockets.emit('redWins');
+			}
 		}
+	})
+
+	socket.on('blackCard', function(){
+		if(gameData.isBlueTurn)
+			io.sockets.emit('redWins');
+		else
+			io.sockets.emit('blueWins');
 	})
 
 	socket.on('endTurn', function(){
 		gameData.clientCallCounter++;
 		gameData.turnIsOver = true;
-		if(gameData.clientCallCounter <= 1){
-			//gameData.turnIsOver = true;
+		console.log("call counter: " +gameData.clientCallCounter);
+		if(gameData.runOnce){
+			gameData.runOnce = false;
 			gameData.turnCounter++;
-			console.log(gameData.isBlueTurn);
-			console.log(gameData.isRedTurn);
 			if(gameData.isBlueTurn){
 				// switch to red team's turn
 				console.log("it is now red turn");
@@ -241,7 +274,7 @@ var io = require('socket.io')(server,{});
 				io.sockets.emit('waitingForRedSpy', gameData);
 				io.sockets.emit('donePickingCards');
 			}
-			else{
+			else if(gameData.isRedTurn){
 				// switch to blue team's turn
 				console.log("it is now blue turn");
 				gameData.isBlueTurn = true;
@@ -252,5 +285,4 @@ var io = require('socket.io')(server,{});
 			}
 		}
 	})
-
 })
