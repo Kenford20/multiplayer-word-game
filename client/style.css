@@ -9,24 +9,38 @@ body{
 
 body{
 	grid-template-columns: 1fr 4fr 1fr;
-	grid-template-rows: 0.5fr 4fr 1fr 1fr 2fr;
+	grid-template-rows: 0.5fr 4fr 1fr 1fr 1fr 1fr;
 	/*grid-template-rows:auto;*/
+}
+
+.hide{
+	display:none;
 }
 
 .btn:hover{
 	background-color:white !important;
 }
 
+/* default color of cards */
+.nest .default{
+	border:4px solid black;
+	background-color:lightgrey;
+}
+
+/* color of cards for guessers when clicked */
 .nest .red{
 	background-color:#db3328;
+	border: 4px solid black;
 }
 
 .nest .blue{
 	background-color:#1c64ff;
+	border: 4px solid black;
 }
 
 .nest .yellow{
 	background-color:#fff68f;
+	border: 4px solid black;	
 }
 
 .nest .black{
@@ -36,6 +50,28 @@ body{
 
 .nest .black a{
 	color:white;
+}
+
+/* color of cards for spymasters when clicked */
+.nest .red2{
+	border:15px solid #db3328;
+	background-color:white;
+}
+
+.nest .blue2{
+	border:15px solid #1c64ff;
+	background-color:white;
+}
+
+.nest .yellow2{
+	border:15px solid #fff68f;
+	background-color:white;
+}
+
+.nest .black2{
+	border:15px solid black;
+	background-color:white;
+	color:black;
 }
 
 /* Header Styles 
@@ -53,20 +89,20 @@ header h1{
 }
 
 #start-game{
-	background-color:black;
+	background-color:grey;
 	padding:10px;
-	color:grey;
+	color:black;
 	width:200px;
-	border: 3px solid white;
+	border: 3px solid black;
 	border-radius:10px;
 }
 
 #restart-game{
-	background-color:white;
+	background-color:black;
 	padding:10px;
 	color:grey;
 	width:200px;
-	border: 3px solid black;
+	border: 3px solid grey;
 	border-radius:10px;
 }
 
@@ -124,12 +160,25 @@ header h1{
 	border:3px solid black;
 }
 
-.hide{
-	display:none;
-}
-
 #blue-spy-message span{
 	color:grey;
+}
+
+#blue-guesser{
+	text-align:center;
+	grid-column:1/2;
+	grid-row:3/4;
+	color:blue;
+	background-color:lightblue;
+	border:3px solid black;
+}
+
+#blue-guess-name{
+	color:grey;
+}
+
+#blue-guess-word{
+	color: grey;
 }
 
 /* Red Team
@@ -160,6 +209,23 @@ header h1{
 }
 
 #red-spy-message span{
+	color:grey;
+}
+
+#red-guesser{
+	text-align:center;
+	grid-column:3/4;
+	grid-row:3/4;
+	color:red;
+	background-color:pink;
+	border:3px solid black;
+}
+
+#red-guess-name{
+	color: grey;
+}
+
+#red-guess-word{
 	color:grey;
 }
 
@@ -210,8 +276,6 @@ header h1{
 }
 
 #spectators #red{
-	/* grid area: row start / col start / row end / col end 
-	grid-area: 5 / 3 / 6 / 4;*/
 	float:right;	
 }
 
@@ -239,6 +303,34 @@ header h1{
 
 .red-word{
 	color: #db3328;
+}
+
+/* Chat
+--------------------------------------------*/
+#chat{
+	grid-column:1/4;
+	grid-row:6/7;
+	background:lightgrey;
+	border:2px solid black;
+	position:relative;
+	width:100%;
+	overflow:hidden;
+}
+
+#chat-box{
+	max-height:125px;
+	overflow-y:scroll;
+}
+
+#input-box{
+	width:100%;
+	position:absolute;
+	bottom:0;
+}
+
+#chat-input{
+	width:100%;
+	background-color:white;
 }
 
 /* Hints
