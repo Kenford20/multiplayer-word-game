@@ -18,6 +18,9 @@ console.log('Server started!');
 
 var socketIDlist = [];
 var playerData = {
+	allPlayers: [],
+	chatter: '',
+	chatMessage: '',
 	spectators: [],
 	bluePlayers: [],
 	blueIDs: [],
@@ -34,6 +37,7 @@ var buttonStates = {
 };
 
 var gameData = {	
+	currentBoardColors: ['lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey'],
 	gameBoardColors: [],	
 	turnCounter: 0,
 	isBlueTurn: false,
@@ -44,11 +48,13 @@ var gameData = {
 	numBlackCards: 1,
 	numCardsToGuess: 0,
 	numCardsPicked: 0,
+	playerWhoGuessed: '',
 	cardSelected: 0,
 	turnIsOver: false,
 	clientCallCounter: 0,
 	runOnce: true,
 	runOnce2: true,
+	runOnce3: true,
 	gameOver: false
 };
 
@@ -57,9 +63,9 @@ var gameData = {
 // io is an object that creates by the socket function
 var io = require('socket.io')(server,{});
 
-	io.sockets.on('connection', function(socket){
+io.sockets.on('connection', function(socket){
 	console.log('socket connection: '+ socket.id);
-	socketIDlist.push(socket.id);
+	//socketIDlist.push(socket.id);
 		
 	//update a new player on the spectators list currently
 	socket.emit('allSpectators', playerData.spectators);
@@ -68,13 +74,48 @@ var io = require('socket.io')(server,{});
 	socket.emit('buttonStates', buttonStates);
 	socket.emit('nameOfBlueSpy', playerData.blueSpyMaster);
 	socket.emit('nameOfRedSpy', playerData.redSpyMaster);
+	socket.emit('updateBoard', gameData);
+	socket.emit('showRestartButton');
 
-	// game setup
+	socket.on('disconnect', function(){
+		var leavingPlayerIndex = socketIDlist.indexOf(socket.id);
+		socketIDlist.splice(leavingPlayerIndex, 1);
+		var leavingPlayerName = playerData.allPlayers[leavingPlayerIndex];
+		playerData.allPlayers.splice(leavingPlayerIndex,1);
+
+		for(i=0;i<playerData.bluePlayers.length; i++){
+			if(playerData.bluePlayers[i] == leavingPlayerName){
+				playerData.bluePlayers.splice(i, 1);
+			}
+		}
+
+		for(i=0;i<playerData.redPlayers.length; i++){
+			if(playerData.redPlayers[i] == leavingPlayerName){
+				playerData.redPlayers.splice(i, 1);
+			}
+		}
+
+		console.log("This player has left: " + leavingPlayerName);
+
+		io.sockets.emit('blueToRed', leavingPlayerName);
+		io.sockets.emit('redToBlue', leavingPlayerName);
+	})
+
+	// team setup
+	/****************************************/
 	socket.on('playerName', function(name){
+		socketIDlist.push(socket.id);
+		playerData.allPlayers.push(name);
 		playerData.spectators.push(name);
 		console.log("spectators after entering: " + playerData.spectators);
 		io.sockets.emit('playerNames', name);
 	});
+
+	socket.on('someoneChatted', function(chatData){
+		playerData.chatter = chatData.chatter;
+		playerData.chatMessage = chatData.chatMessage;
+		io.sockets.emit('displayChatMessage', playerData);
+	})
 
 	socket.on('blue', function(clientName){
 		console.log("Player: " + clientName + " has joined blue team");
@@ -225,11 +266,19 @@ var io = require('socket.io')(server,{});
 		io.sockets.emit('revealCardColor', gameData);
 	})
 
+	socket.on('showGuesser', function(playerName){
+		gameData.playerWhoGuessed = playerName;
+		io.sockets.emit('showGuesser', gameData);
+	})
+
 	socket.on('updateCardCount', function(colorOfCard){
+		//io.sockets.emit('showGuesser', gameData.cardSelected);		
 		gameData.clientCallCounter = 0;
 
 		if(gameData.runOnce2){
 			gameData.runOnce2 = false;
+
+			gameData.currentBoardColors[gameData.cardSelected] = colorOfCard;
 
 			if(colorOfCard == 'blue')
 				gameData.numBlueCards--;
@@ -252,10 +301,13 @@ var io = require('socket.io')(server,{});
 	})
 
 	socket.on('blackCard', function(){
-		if(gameData.isBlueTurn)
-			io.sockets.emit('redWins');
-		else
-			io.sockets.emit('blueWins');
+		if(gameData.runOnce3){
+			gameData.runOnce3 = false;
+			if(gameData.isBlueTurn)
+				io.sockets.emit('redWins');
+			else
+				io.sockets.emit('blueWins');
+		}
 	})
 
 	socket.on('endTurn', function(){
@@ -284,5 +336,50 @@ var io = require('socket.io')(server,{});
 				io.sockets.emit('donePickingCards');
 			}
 		}
+	})
+
+	socket.on('showRestartButton', function(){
+		io.sockets.emit('showRestartButton');
+	})
+
+	socket.on('restartGame', function(){
+		console.log("restarting game");
+
+		io.to(playerData.blueSpyID).emit('resetSpyBoard', gameData);
+		io.to(playerData.redSpyID).emit('resetSpyBoard', gameData);
+		io.sockets.emit('restartingGame', playerData);
+
+		playerData.allPlayers = [];
+		playerData.spectators = [];
+		playerData.bluePlayers = [];
+		playerData.blueIDs = [];
+		playerData.redPlayers = [];
+		playerData.redIDs = [];
+		playerData.blueSpyMaster = '';
+		playerData.redSpyMaster = '';
+		playerData.blueSpyID = 0;
+		playerData.redSpyID = 0;
+
+		gameData.currentBoardColors = ['lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey'];
+		gameData.gameBoardColors = [];	
+		gameData.turnCounter = 0;
+		gameData.isBlueTurn = false;
+		gameData.isRedTurn = false;
+		gameData.numBlueCards = 0;
+		gameData.numRedCards = 0;
+		gameData.numYellowCards = 7;
+		gameData.numBlackCards = 1;
+		gameData.numCardsToGuess = 0;
+		gameData.numCardsPicked = 0;
+		gameData.cardSelected = 0;
+		gameData.turnIsOver = false;
+		gameData.clientCallCounter = 0;
+		gameData.runOnce = true;
+		gameData.runOnce2 = true;
+		gameData.runOnce3 = true;
+		gameData.gameOver = false;
+
+		io.sockets.emit('newBoard', gameData);
+		console.log("telling clients to restart");
 	})
 })
