@@ -307,30 +307,64 @@ header h1{
 
 /* Chat
 --------------------------------------------*/
+.nest3{
+	background-color:black;
+	display:grid;
+	grid-template-columns: 1fr 1fr;
+}
+
+.nest4{
+	display:grid;
+	grid-template-rows:5fr 1fr;
+}
+
+.highlight-chatter{
+	color:green;
+}
+
 #chat{
 	grid-column:1/4;
 	grid-row:6/7;
 	background:lightgrey;
-	border:2px solid black;
 	position:relative;
 	width:100%;
 	overflow:hidden;
 }
 
-#chat-box{
+#chat-box, #team-chat-box{
 	max-height:125px;
 	overflow-y:scroll;
 }
 
-#input-box{
+#input-box, #team-input-box{
 	width:100%;
-	position:absolute;
-	bottom:0;
 }
 
-#chat-input{
+#chat-input, #team-chat-input{
+	box-sizing:border-box;
 	width:100%;
 	background-color:white;
+}
+
+.chat-black{
+	border:5px solid black;
+	border-radius: 10px;
+}
+
+.team-chat-blue{
+	border:5px solid #1c64ff;
+	border-radius: 10px;
+}
+
+.team-chat-red{
+	border:5px solid #db3328;
+	border-radius: 10px;
+}
+
+.chat-message{
+	padding-top:0;
+	margin-top:0;
+	margin-bottom:2px;
 }
 
 /* Hints

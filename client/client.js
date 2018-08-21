@@ -11,8 +11,11 @@ const restartGame_btn = document.querySelector("#restart-game");
 const hint_btn = document.querySelector("#hint-btn");
 const submit_name = document.querySelector("#name_btn");
 const name = document.querySelector("#name");
+const chat = document.querySelector("#chat");
 const chatInput = document.querySelector("#chat-input");
+const teamChatInput = document.querySelector("#team-chat-input");
 const chatBox = document.querySelector("#chat-box");
+const teamChatBox = document.querySelector("#team-chat-box");
 const gameBoard = document.querySelector("#game-board");
 const allCards = document.querySelectorAll(".card");
 const blueWaitingMessage = document.querySelector("#blue-waiting");
@@ -118,6 +121,9 @@ function joinBlueTeam(){
 				client.team = 'blue';
 				client.teamJoinCounter++;
 				console.log("after joining blue: " + client.teamJoinCounter);
+				document.querySelector("#team-chat-div").classList.remove("chat-black");
+				document.querySelector("#team-chat-div").classList.remove("team-chat-red");
+				document.querySelector("#team-chat-div").classList.add("team-chat-blue");
 			}
 		}
 	}
@@ -131,6 +137,9 @@ function joinRedTeam(){
 				client.team = 'red';
 				client.teamJoinCounter++;
 				console.log("after joining red: " + client.teamJoinCounter);
+				document.querySelector("#team-chat-div").classList.remove("chat-black");
+				document.querySelector("#team-chat-div").classList.remove("team-chat-blue");
+				document.querySelector("#team-chat-div").classList.add("team-chat-red	");
 			}
 		}
 	}
@@ -306,10 +315,6 @@ function gameStartSetup(){
 	}
 }
 
-function showRestartButton(){
-	document.querySelector("#restart-game").classList.remove("hide");
-}
-
 function updateGameStatus(){
 	gameisNotStarted = false;
 }
@@ -366,24 +371,6 @@ function redTeamWaits(gameData){
 		document.querySelector("#hint-message").classList.add("hide");
 	}
 }
-
-/*
-// reveals a message to all clients prompting them to wait for spymaster
-function waitingMessage(gameData){
-	document.querySelector("#message").innerHTML = "";
-
-	if(gameData.isBlueTurn){
-		blueWaitingMessage.classList.remove("hide");
-		redWaitingMessage.classList.add("hide");
-		redGuessMessage.classList.add("hide");
-	}
-	else{
-		redWaitingMessage.classList.remove("hide");
-		blueWaitingMessage.classList.add("hide");
-		blueGuessMessage.classList.add("hide");
-	}
-	document.querySelector("#hint-message").classList.add("hide");
-}*/
 
 // runs when hint submission button is clicked
 // hides the hint input from the spy master once the hint is submitted
@@ -446,15 +433,6 @@ function revealHint(hintData){
 // creates an event listener for all the cards and sends the card info on click
 function pickCards(gameData){
 	client.canGuess = true;
-	/*for(i=0; i<allCards.length; i++){
-		allCards[i].addEventListener("click", function{
-		 	whichCardWasPicked(this, gameData); 
-		});
-	}
-	
-	for(i=0; i<allCards.length; i++){
-		allCards[i].addEventListener("click", whichCardWasPicked);
-	}*/
 }
 
 // determines which card was selected based on the index in the array of cards
@@ -665,32 +643,88 @@ function removePlayers(playerData){
 
 function chatEntered(){
 	if(event.keyCode == 13){
-		let chatData = {
-			chatter: '',
-			chatMessage: ''
-		};
-
-		chatData.chatter = client.name;
-		chatData.chatMessage = chatInput.value;
-		socket.emit('someoneChatted', chatData);
-		chatInput.value = '';
+		if(client.name != ''){
+			let chatData = {
+				chatter: '',
+				chatMessage: ''
+			};
+			chatData.chatter = client.name;
+			chatData.chatMessage = chatInput.value;
+			socket.emit('someoneChatted', chatData);
+			chatInput.value = '';
+		}
+		else{
+			chatInput.value = '';
+			alert("Please enter a name before you chat!");
+		}
 	}
 }
 
 function displayChatMessage(playerData){
-	let chatMessage = document.createElement("h6");
-	let chatText = playerData.chatter + ": " + playerData.chatMessage;
-	console.log(chatText);
-	let node = document.createTextNode(chatText);
+	let chatMessage = document.createElement("h5");
+	let chatter = document.createElement("span");
+	let chatterNode = document.createTextNode(playerData.chatter);
+	chatter.appendChild(chatterNode);
+	console.log(chatter);
+	socket.emit('chatterSpan');
+	chatMessage.appendChild(chatter);
+	let chatText = ": " + playerData.chatMessage;
+	let messageNode = document.createTextNode(chatText);
 
-	chatMessage.appendChild(node);
-	chatBox.appendChild(chatMessage);
+	chatMessage.appendChild(messageNode);
+	chatMessage.classList.add("chat-message");
+
+	// create the message in the team chat box if message was entered in there
+	if(playerData.isTeamMessage)
+		teamChatBox.appendChild(chatMessage);
+	// else create it in the global chat box
+	else
+		chatBox.appendChild(chatMessage);
+
+	chatBox.scrollTo(0, document.chatBox.scrollHeight);
+	//teamChatBox.scrollTo(0, document.teamChatBox.scrollHeight);
+}
+
+function highlightChatter(){
+	var chatterSpan = chat.querySelectorAll("span");
+	console.log(chatterSpan);
+	for(i=0;i<chatterSpan.length;i++){
+		console.log(chatterSpan[i].innerHTML);
+		console.log(client.name);
+		if((chatterSpan[i].innerHTML + '  ') == client.name){
+			console.log("class is added");
+			chatterSpan[i].classList.add("highlight-chatter");
+		}
+	}
+}
+
+function teamChatEntered(){
+	if(event.keyCode == 13){
+		if(client.team != ''){
+			let teamChatData = {
+				teamChatter: '',
+				chatterTeamColor: '',
+				teamChatMessage: ''
+			};
+			teamChatData.teamChatter = client.name;
+			teamChatData.chatterTeamColor = client.team;
+			teamChatData.teamChatMessage = teamChatInput.value;
+			socket.emit('teamChat', teamChatData);
+			chatInput.value = '';
+		}
+		else{
+			chatInput.value = '';
+			alert("Please join a team before using team chat!");
+		}
+	}
 }
 
 /* Sockets
 **************************************/
 socket.on('playerNames', createSpectators);
 socket.on('displayChatMessage', displayChatMessage);
+socket.on('displayTeamChat', displayChatMessage);
+socket.on('showClientChatter', highlightChatter);
 // updating new players who joined later than others
 socket.on('allSpectators', currentSpectators);
 socket.on('allBluePlayers', currentBluePlayers);
@@ -728,7 +762,6 @@ socket.on('guessHasBeenMade', revealCardForSpies);
 socket.on('donePickingCards', disableEventListeners);
 socket.on('blueWins', blueWins);
 socket.on('redWins', redWins);
-socket.on('showRestartButton', showRestartButton);
 socket.on('restartingGame', removePlayers);
 socket.on('resetSpyBoard', resetSpyBoard);
 socket.on('newBoard', newBoard);
@@ -744,6 +777,7 @@ startGame_btn.addEventListener("click", gameStartSetup);
 restartGame_btn.addEventListener("click", restartGame);
 hint_btn.addEventListener("click", startGuess);
 chatInput.addEventListener("keyup", chatEntered);
+teamChatInput.addEventListener("keyup", teamChatEntered);
 
 for(i=0; i<allCards.length; i++){
 	allCards[i].addEventListener("click", whichCardWasPicked);

@@ -20,7 +20,9 @@ var socketIDlist = [];
 var playerData = {
 	allPlayers: [],
 	chatter: '',
+	chatterTeamColor: '',
 	chatMessage: '',
+	isTeamMessage: false,
 	spectators: [],
 	bluePlayers: [],
 	blueIDs: [],
@@ -75,7 +77,6 @@ io.sockets.on('connection', function(socket){
 	socket.emit('nameOfBlueSpy', playerData.blueSpyMaster);
 	socket.emit('nameOfRedSpy', playerData.redSpyMaster);
 	socket.emit('updateBoard', gameData);
-	socket.emit('showRestartButton');
 
 	socket.on('disconnect', function(){
 		var leavingPlayerIndex = socketIDlist.indexOf(socket.id);
@@ -114,7 +115,30 @@ io.sockets.on('connection', function(socket){
 	socket.on('someoneChatted', function(chatData){
 		playerData.chatter = chatData.chatter;
 		playerData.chatMessage = chatData.chatMessage;
+		console.log(playerData.chatMessage);
 		io.sockets.emit('displayChatMessage', playerData);
+	})
+
+	socket.on('teamChat', function(teamChatData){
+		playerData.chatter = teamChatData.teamChatter;
+		playerData.chatMessage = teamChatData.teamChatMessage;
+		playerData.chatterTeamColor = teamChatData.chatterTeamColor;
+		playerData.isTeamMessage = true;
+
+		if(teamChatData.chatterTeamColor == 'blue'){
+			for(i=0;i<playerData.blueIDs.length;i++)
+				io.to(playerData.blueIDs[i]).emit('displayTeamChat', playerData);
+		}
+		else if(teamChatData.chatterTeamColor == 'red'){
+			for(i=0;i<playerData.redIDs.length;i++)
+				io.to(playerData.redIDs[i]).emit('displayTeamChat', playerData);
+		}
+
+		playerData.isTeamMessage = false;
+	})
+
+	socket.on('chatterSpan', function(){
+		socket.emit('showClientChatter');
 	})
 
 	socket.on('blue', function(clientName){
