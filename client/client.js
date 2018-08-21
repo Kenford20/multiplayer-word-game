@@ -110,6 +110,16 @@ function updateBoard(gameData){
 	}
 }
 
+function updateGameWords(gameData){
+	if(gameData.gameHasStarted){
+		var gameWords = gameBoard.querySelectorAll("a");
+		for(i=0;i<gameWords.length;i++){
+			gameWords[i].innerHTML = gameData.gameWords[i];
+		}
+		document.querySelector("#message").classList.add("hide");
+	}
+}
+
 // you can join a team if game has not started yet
 // you cannot join a team that you're already on
 // you cannot join a team unless you have a name
@@ -139,7 +149,7 @@ function joinRedTeam(){
 				console.log("after joining red: " + client.teamJoinCounter);
 				document.querySelector("#team-chat-div").classList.remove("chat-black");
 				document.querySelector("#team-chat-div").classList.remove("team-chat-blue");
-				document.querySelector("#team-chat-div").classList.add("team-chat-red	");
+				document.querySelector("#team-chat-div").classList.add("team-chat-red");
 			}
 		}
 	}
@@ -306,13 +316,42 @@ function gameStartSetup(){
 			socket.emit('setUpBoardforSpies', boardData);
 			socket.emit('showRestartButton');
 
+			var words;
+			var possibleWords = getWordsFromFile("words.txt", words);
+			var boardWords = [];
+
 			// this is for the words
-			/*var gameWords = gameBoard.querySelectorAll("a");
-			for(i=0;i<gameWords.length;i++){
-			gameWords[i].innerHTML = randomWord;
-		} */
+			for(i=0;i<25;i++){
+				let randomPossibleWord = Math.floor(Math.random() * possibleWords.length);
+				boardWords.push(possibleWords[randomPossibleWord]);
+			}
+
+			socket.emit('setUpGameWords', boardWords);
 		}
 	}
+}
+
+function setUpGameWords(boardWords){
+	var gameWords = gameBoard.querySelectorAll("a");
+	for(i=0;i<gameWords.length;i++)
+		gameWords[i].innerHTML = boardWords[i];
+}
+
+function getWordsFromFile(file, words){
+    var rawFile = new XMLHttpRequest();
+    rawFile.open("GET", file, false);
+    rawFile.onreadystatechange = function (){
+        if(rawFile.readyState === 4)
+        {
+            if(rawFile.status === 200 || rawFile.status == 0)
+            {
+                var allWords = rawFile.responseText;
+                words = allWords.split('\n');
+            }
+        }
+    }
+    rawFile.send(null);
+    return words;
 }
 
 function updateGameStatus(){
@@ -352,7 +391,7 @@ function createHintBox(gameData){
 
 function blueTeamWaits(gameData){
 	if(!gameData.gameOver){
-		document.querySelector("#message").innerHTML = "";
+		document.querySelector("#message").classList.add("hide");
 		blueWaitingMessage.classList.remove("hide");
 		redWaitingMessage.classList.add("hide");
 		redGuessMessage.classList.add("hide");
@@ -363,7 +402,7 @@ function blueTeamWaits(gameData){
 
 function redTeamWaits(gameData){
 	if(!gameData.gameOver){
-		document.querySelector("#message").innerHTML = "";
+		document.querySelector("#message").classList.add("hide");
 		redWaitingMessage.classList.remove("hide");
 		blueWaitingMessage.classList.add("hide");
 		blueGuessMessage.classList.add("hide");
@@ -597,6 +636,24 @@ function resetSpyBoard(gameData){
 	select.parentNode.removeChild(select);
 }
 
+function resetChat(){
+	var allGlobalMessages = chatBox.querySelectorAll("h5");
+	var allTeamMessages = teamChatBox.querySelectorAll("h5");
+
+	for(i=0; i<allGlobalMessages.length ;i++)
+		chatBox.removeChild(allGlobalMessages[i]);
+	for(i=0; i<allTeamMessages.length ;i++)
+		teamChatBox.removeChild(allTeamMessages[i]);
+}
+
+function resetWords(){
+	var gameWords = gameBoard.querySelectorAll("a");
+	for(i=0;i<gameWords.length;i++){
+		defaultWord = "Word" + i;
+		gameWords[i].innerHTML = defaultWord;
+	}
+}
+
 function removePlayers(playerData){
 
 	// reset all client data
@@ -625,9 +682,11 @@ function removePlayers(playerData){
 	submit_name.classList.remove("hide");
 	name.classList.remove("hide");
 	resetMessage.classList.remove("hide");
-	document.querySelector("#message").classList.remove("hide");
 	document.querySelector("#blue-spy-message").classList.add("hide");
 	document.querySelector("#red-spy-message").classList.add("hide");
+	document.querySelector("#team-chat-div").classList.add("chat-black");
+	document.querySelector("#team-chat-div").classList.remove("team-chat-blue");
+	document.querySelector("#team-chat-div").classList.remove("team-chat-red");
 	blueWaitingMessage.classList.add("hide");
 	redWaitingMessage.classList.add("hide");
 	blueGuessMessage.classList.add("hide");
@@ -639,6 +698,8 @@ function removePlayers(playerData){
 	document.querySelector("#blue-guesser").classList.add("hide");
 	document.querySelector("#red-guesser").classList.add("hide");
 	document.querySelector("#chat").classList.add("hide");
+	document.querySelector("#message").classList.remove("hide");
+
 }
 
 function chatEntered(){
@@ -656,6 +717,27 @@ function chatEntered(){
 		else{
 			chatInput.value = '';
 			alert("Please enter a name before you chat!");
+		}
+	}
+}
+
+function teamChatEntered(){
+	if(event.keyCode == 13){
+		if(client.team != ''){
+			let teamChatData = {
+				teamChatter: '',
+				chatterTeamColor: '',
+				teamChatMessage: ''
+			};
+			teamChatData.teamChatter = client.name;
+			teamChatData.chatterTeamColor = client.team;
+			teamChatData.teamChatMessage = teamChatInput.value;
+			socket.emit('teamChat', teamChatData);
+			teamChatInput.value = '';
+		}
+		else{
+			teamChatInput.value = '';
+			alert("Please join a team before using team chat!");
 		}
 	}
 }
@@ -681,8 +763,8 @@ function displayChatMessage(playerData){
 	else
 		chatBox.appendChild(chatMessage);
 
-	chatBox.scrollTo(0, document.chatBox.scrollHeight);
-	//teamChatBox.scrollTo(0, document.teamChatBox.scrollHeight);
+	chatBox.scrollTop = chatBox.scrollHeight;
+	teamChatBox.scrollTop = teamChatBox.scrollHeight;
 }
 
 function highlightChatter(){
@@ -691,30 +773,9 @@ function highlightChatter(){
 	for(i=0;i<chatterSpan.length;i++){
 		console.log(chatterSpan[i].innerHTML);
 		console.log(client.name);
-		if((chatterSpan[i].innerHTML + '  ') == client.name){
+		if((chatterSpan[i].innerHTML) == client.name){
 			console.log("class is added");
 			chatterSpan[i].classList.add("highlight-chatter");
-		}
-	}
-}
-
-function teamChatEntered(){
-	if(event.keyCode == 13){
-		if(client.team != ''){
-			let teamChatData = {
-				teamChatter: '',
-				chatterTeamColor: '',
-				teamChatMessage: ''
-			};
-			teamChatData.teamChatter = client.name;
-			teamChatData.chatterTeamColor = client.team;
-			teamChatData.teamChatMessage = teamChatInput.value;
-			socket.emit('teamChat', teamChatData);
-			chatInput.value = '';
-		}
-		else{
-			chatInput.value = '';
-			alert("Please join a team before using team chat!");
 		}
 	}
 }
@@ -733,6 +794,7 @@ socket.on('buttonStates', checkButtonStates);
 socket.on('nameOfBlueSpy', removeBlueSpyButton);
 socket.on('nameOfRedSpy', removeRedSpyButton);
 socket.on('updateBoard', updateBoard);
+socket.on('updateGameWords', updateGameWords);
 
 // move the clients' name to their respective teams
 socket.on('bluePlayer', createBluePlayers);
@@ -749,6 +811,7 @@ socket.on('highlightRedSpy', highlightRedSpy);
 
 // game started
 socket.on('gameHasStarted', updateGameStatus);
+socket.on('setUpGameWords', setUpGameWords);
 socket.on('youCanSeeTheBoard', spyMasterBoard);
 socket.on('createHintBox', createHintBox);
 socket.on('waitingForBlueSpy', blueTeamWaits);
@@ -764,6 +827,8 @@ socket.on('blueWins', blueWins);
 socket.on('redWins', redWins);
 socket.on('restartingGame', removePlayers);
 socket.on('resetSpyBoard', resetSpyBoard);
+socket.on('resetTheChat', resetChat);
+socket.on('resetWords', resetWords);
 socket.on('newBoard', newBoard);
 
 /* Event Listeners

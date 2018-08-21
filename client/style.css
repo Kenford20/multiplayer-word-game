@@ -9,7 +9,7 @@ body{
 
 body{
 	grid-template-columns: 1fr 4fr 1fr;
-	grid-template-rows: 0.5fr 4fr 1fr 1fr 1fr 1fr;
+	grid-template-rows: 0.5fr 3fr 0.5fr 0.5fr 0.5fr 1fr;
 	/*grid-template-rows:auto;*/
 }
 
@@ -241,9 +241,6 @@ header h1{
 
 #spectators li{
 	display:inline-block;
-}
-
-#spectators ul{
 }
 
 #red{

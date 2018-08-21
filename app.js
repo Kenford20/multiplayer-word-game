@@ -40,10 +40,12 @@ var buttonStates = {
 
 var gameData = {	
 	currentBoardColors: ['lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey', 'lightgrey'],
-	gameBoardColors: [],	
+	gameBoardColors: [],
+	gameWords: [],	
 	turnCounter: 0,
 	isBlueTurn: false,
 	isRedTurn: false,
+	gameHasStarted: false,
 	numBlueCards: 0,
 	numRedCards: 0,
 	numYellowCards: 7,
@@ -66,7 +68,7 @@ var gameData = {
 var io = require('socket.io')(server,{});
 
 io.sockets.on('connection', function(socket){
-	console.log('socket connection: '+ socket.id);
+	//console.log('socket connection: '+ socket.id);
 	//socketIDlist.push(socket.id);
 		
 	//update a new player on the spectators list currently
@@ -77,6 +79,7 @@ io.sockets.on('connection', function(socket){
 	socket.emit('nameOfBlueSpy', playerData.blueSpyMaster);
 	socket.emit('nameOfRedSpy', playerData.redSpyMaster);
 	socket.emit('updateBoard', gameData);
+	socket.emit('updateGameWords', gameData);
 
 	socket.on('disconnect', function(){
 		var leavingPlayerIndex = socketIDlist.indexOf(socket.id);
@@ -115,7 +118,6 @@ io.sockets.on('connection', function(socket){
 	socket.on('someoneChatted', function(chatData){
 		playerData.chatter = chatData.chatter;
 		playerData.chatMessage = chatData.chatMessage;
-		console.log(playerData.chatMessage);
 		io.sockets.emit('displayChatMessage', playerData);
 	})
 
@@ -149,7 +151,7 @@ io.sockets.on('connection', function(socket){
 		var spectatorIndex = playerData.spectators.indexOf(clientName);
 		playerData.spectators.splice(spectatorIndex, 1);
 		io.sockets.emit('removeSpectator', clientName);
-		console.log("BLUE PLAYER IDS: " + playerData.blueIDs);
+		//console.log("BLUE PLAYER IDS: " + playerData.blueIDs);
 		//console.log("spectators after joining blue team: " + playerData.spectators);
 	});
 
@@ -171,7 +173,7 @@ io.sockets.on('connection', function(socket){
 		var spectatorIndex = playerData.spectators.indexOf(clientName);
 		playerData.spectators.splice(spectatorIndex, 1);
 		io.sockets.emit('removeSpectator', clientName);
-		console.log("RED PLAYER IDS: " + playerData.redIDs);
+		//console.log("RED PLAYER IDS: " + playerData.redIDs);
 		//console.log("spectators after joining red team: " + playerData.spectators);	
 	})
 
@@ -212,7 +214,15 @@ io.sockets.on('connection', function(socket){
 	// game has started
 	/***********************************/
 	socket.on('gameHasStarted', function(){
+		gameData.gameHasStarted = true;
 		io.sockets.emit('gameHasStarted');
+	})
+
+	socket.on('setUpGameWords', function(boardWords){
+		io.sockets.emit('setUpGameWords', boardWords);
+		for(i=0;i<boardWords.length;i++){
+			gameData.gameWords.push(boardWords[i]);
+		}
 	})
 
 	socket.on('setUpBoardforSpies', function(boardObject){
@@ -362,16 +372,13 @@ io.sockets.on('connection', function(socket){
 		}
 	})
 
-	socket.on('showRestartButton', function(){
-		io.sockets.emit('showRestartButton');
-	})
-
 	socket.on('restartGame', function(){
 		console.log("restarting game");
 
 		io.to(playerData.blueSpyID).emit('resetSpyBoard', gameData);
 		io.to(playerData.redSpyID).emit('resetSpyBoard', gameData);
 		io.sockets.emit('restartingGame', playerData);
+		io.sockets.emit('resetTheChat');
 
 		playerData.allPlayers = [];
 		playerData.spectators = [];
@@ -389,6 +396,7 @@ io.sockets.on('connection', function(socket){
 		gameData.turnCounter = 0;
 		gameData.isBlueTurn = false;
 		gameData.isRedTurn = false;
+		gameData.gameHasStarted = false;
 		gameData.numBlueCards = 0;
 		gameData.numRedCards = 0;
 		gameData.numYellowCards = 7;
@@ -404,6 +412,7 @@ io.sockets.on('connection', function(socket){
 		gameData.gameOver = false;
 
 		io.sockets.emit('newBoard', gameData);
+		io.sockets.emit('resetWords');
 		console.log("telling clients to restart");
 	})
 })
